@@ -494,6 +494,15 @@ b.kn{font-weight:600}
 .kmore:hover{background:var(--surface-2)}
 .ov-owe .orow .nm{font-size:15px}
 
+.ctog .switch{position:relative;overflow:hidden;display:flex;align-items:center;gap:12px;cursor:pointer;padding:10px 12px;border-radius:14px;background:var(--surface-2)}
+.ctog .switch input{position:absolute;left:12px;top:50%;width:1px;height:1px;opacity:0;pointer-events:none}
+.ctog .sl{width:46px;height:28px;border-radius:999px;background:var(--line-strong);position:relative;flex:none;transition:background .15s}
+.ctog .sl::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.25);transition:transform .15s}
+.ctog input:checked+.sl{background:var(--accent)}
+.ctog input:checked+.sl::after{transform:translateX(18px)}
+.ctog input:focus-visible+.sl{outline:2px solid var(--accent);outline-offset:2px}
+.ctog b{display:block;font-size:15px;color:var(--ink)}.ctog small{color:var(--ink-3);font-size:12.5px;font-weight:400}
+
 .fbgate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:20px 16px;overflow:auto}
 .fbcard{width:min(420px,100%);background:var(--surface);border-radius:24px;box-shadow:var(--shadow-lg);overflow:hidden}
 .fbimg{width:100%;height:190px;object-fit:cover;display:block;max-width:none}
@@ -706,6 +715,9 @@ b.kn{font-weight:600}
       <div class="f full"><label for="sName">Name or shop</label><input id="sName" required placeholder="e.g. Madina Cement Store"></div>
       <div class="f"><label for="sPhone">Phone <em>(optional)</em></label><input id="sPhone" inputmode="tel"></div>
       <div class="f"><label for="sCat">Main material</label><select id="sCat"></select></div>
+      <div class="f full ctog"><label class="switch" for="sCon"><input id="sCon" type="checkbox"><span class="sl"></span><span><b>Contract</b><small>Turn on for a fixed-price job, like the plumber or electrician</small></span></label></div>
+      <div class="f" data-con><label for="sConAmt">Contract amount <em>(total agreed)</em></label><input id="sConAmt" type="number" step="any" min="0" inputmode="decimal" placeholder="e.g. 220000"></div>
+      <div class="f" data-con><label for="sConRate">Rate or terms <em>(optional)</em></label><input id="sConRate" placeholder="e.g. Rs 410 per sq ft"></div>
       <div class="f full"><label for="sNote">Note <em>(optional)</em></label><textarea id="sNote" placeholder="Address, bank account, contact person"></textarea></div>
     </div>
     <div class="err" id="supErr" hidden></div>
@@ -887,10 +899,17 @@ function data(){
   if(dbReady&&!isEmpty())return {settings:{...BLANK,...(real.settings||{})},suppliers:real.suppliers,bills:real.bills,pays:real.pays,demo:false};
   return {...DEMO,demo:true};
 }
-function supBal(d,id){let billed=0,paid=0;
-  for(const b of d.bills)if(b.supplierId===id)billed+=num(b.total);
+function rateFromNote(n){const m=(n||'').match(/Rs\s*([\d,]+)\s*per\s*sq\s*ft/i);return m?'Rs '+m[1]+' per sq ft':'';}
+function contractOf(s,d){
+  if(s&&s.contract&&typeof s.contract==='object')return {on:!!s.contract.on,amount:num(s.contract.amount),rate:s.contract.rate||''};
+  const cb=d.bills.filter(b=>b.supplierId===s.id&&/contract/i.test((b.item||'')+' '+(b.note||'')));
+  if(cb.length)return {on:true,amount:cb.reduce((a,b)=>a+num(b.total),0),rate:'',legacy:true};
+  if(s.cat==='labour')return {on:true,amount:0,rate:rateFromNote(s.note),legacy:true};
+  return {on:false,amount:0,rate:''};}
+function supBal(d,id){const s=d.suppliers.find(x=>x.id===id)||{id};let paid=0;
   for(const p of d.pays)if(p.supplierId===id)paid+=num(p.amount);
-  return {billed,paid,bal:billed-paid};}
+  const c=contractOf(s,d);const billed=c.on&&c.amount?c.amount:paid;
+  return {billed,paid,bal:c.on&&c.amount?c.amount-paid:0,contract:c};}
 
 // ---------- render ----------
 function render(){
@@ -1019,11 +1038,11 @@ function renderRecent(d){
 }
 function niceStep(x){if(x<=0)return 1;const p=Math.pow(10,Math.floor(Math.log10(x)));const f=x/p;return (f<=1?1:f<=2?2:f<=2.5?2.5:f<=5?5:10)*p;}
 function renderOwe(d){
-  const list=d.suppliers.map(x=>({x,b:supBal(d,x.id)})).filter(o=>o.b.bal>0.5).sort((a,b)=>b.b.bal-a.b.bal).slice(0,6);
-  const lab=d.suppliers.filter(x=>x.cat==='labour').map(x=>({x,b:supBal(d,x.id)})).filter(o=>o.b.billed<0.5&&o.b.paid>0);
-  const labHtml=lab.map(({x,b})=>{const m=(x.note||'').match(/Rs\s*([\d,]+)\s*per\s*sq\s*ft/i);const rate=m?m[1]:'';
-    return `<button class="orow" type="button" data-sup="${esc(x.id)}"><span><span class="nm">${esc(x.name)}</span><span class="meta">Labour · paid ${fmt(b.paid)} so far${rate?' · Rs '+esc(rate)+' per sq ft':''}</span><span class="meta" style="color:var(--gold)">Total contract amount set when covered area is confirmed</span></span><span class="pill bill">Pending</span></button>`;}).join('');
-  $('oweList').innerHTML=labHtml+list.map(({x,b})=>`<button class="orow" type="button" data-sup="${esc(x.id)}"><span><span class="nm">${esc(x.name)}</span><span class="meta">paid ${fmt(b.paid)} of ${fmt(b.billed)}</span><span class="bar"><i style="width:${Math.min(100,b.paid/(b.billed||1)*100).toFixed(1)}%"></i></span></span><span class="pill due num">${fmt(b.bal)}</span></button>`).join('')
+  const all=d.suppliers.map(x=>({x,b:supBal(d,x.id)})).filter(o=>o.b.contract.on);
+  const pend=all.filter(o=>!o.b.contract.amount);
+  const list=all.filter(o=>o.b.contract.amount&&o.b.bal>0.5).sort((a,b)=>b.b.bal-a.b.bal);
+  const pendHtml=pend.map(({x,b})=>`<button class="orow" type="button" data-sup="${esc(x.id)}"><span><span class="nm">${esc(x.name)}</span><span class="meta">Paid ${fmt(b.paid)} so far${b.contract.rate?' · '+esc(b.contract.rate):''}</span><span class="meta" style="color:var(--gold)">Contract amount not set yet</span></span><span class="pill bill">Pending</span></button>`).join('');
+  $('oweList').innerHTML=pendHtml+list.map(({x,b})=>`<button class="orow" type="button" data-sup="${esc(x.id)}"><span><span class="nm">${esc(x.name)}</span><span class="meta">paid ${fmt(b.paid)} of ${fmt(b.contract.amount)}</span><span class="bar"><i style="width:${Math.min(100,b.paid/(b.contract.amount||1)*100).toFixed(1)}%"></i></span></span><span class="pill due num">${fmt(b.bal)}</span></button>`).join('')
     ||'<div class="empty">Nothing left to pay. Every contract is settled.</div>';
 }
 const ordKey=x=>typeof x.order==='number'?x.order:1e6;
@@ -1038,13 +1057,13 @@ function renderSups(d){
   list.sort(sort==='mine'?(a,b)=>byOrder(a.x,b.x):sort==='name'?(a,b)=>a.x.name.localeCompare(b.x.name):sort==='billed'?(a,b)=>b.b.paid-a.b.paid:(a,b)=>b.b.bal-a.b.bal||b.b.billed-a.b.billed);
   const n=list.length;const pc={};for(const p of d.pays)pc[p.supplierId]=(pc[p.supplierId]||0)+1;
   $('supList').innerHTML=(arranging?'<div class="arrangehint" style="grid-column:1/-1">Use the arrows to move suppliers up or down. Tap Done when finished.</div>':'')+list.map(({x,b},i)=>{
-    const pill=b.bal>0.5?`<span class="pill due">Contract</span>`:'';
+    const pill=b.contract.on?(b.contract.amount&&b.bal<=0.5?`<span class="pill clear">Contract paid</span>`:`<span class="pill due">Contract</span>`):'';
     const dis=moving?' disabled':'';
     const mv=arranging?`<div class="movebar"><button class="btn small" type="button" data-move="top" data-id="${esc(x.id)}"${i===0?' disabled':dis} aria-label="Move to top">⤒ Top</button><button class="btn small" type="button" data-move="up" data-id="${esc(x.id)}"${i===0?' disabled':dis} aria-label="Move up">↑ Up</button><span class="pos num">${i+1}/${n}</span><button class="btn small" type="button" data-move="down" data-id="${esc(x.id)}"${i===n-1?' disabled':dis} aria-label="Move down">↓ Down</button><button class="btn small" type="button" data-move="bottom" data-id="${esc(x.id)}"${i===n-1?' disabled':dis} aria-label="Move to bottom">⤓ End</button></div>`:'';
     const open=arranging?`<div class="scard arr">`:`<button class="scard" type="button" data-sup="${esc(x.id)}">`;
     return `${open}
       <div class="hd"><div><h3>${esc(x.name)}</h3><div class="meta">${esc(CATNAME[x.cat]||'')}${x.phone?' · '+esc(x.phone):''}</div></div>${pill}</div>
-      <div class="row num"><div><span class="meta">Paid</span><b style="color:var(--paid)">${fmt(b.paid)}</b></div><div><span class="meta">Payments</span><b>${pc[x.id]||0}</b></div>${b.bal>0.5?`<div><span class="meta">Balance</span><b style="color:var(--due)">${fmt(b.bal)}</b></div>`:''}</div>${mv}
+      <div class="row num"><div><span class="meta">Paid</span><b style="color:var(--paid)">${fmt(b.paid)}</b></div><div><span class="meta">Payments</span><b>${pc[x.id]||0}</b></div>${b.bal>0.5?`<div><span class="meta">Balance</span><b style="color:var(--due)">${fmt(b.bal)}</b></div>`:(b.contract.on&&!b.contract.amount?`<div><span class="meta">Contract</span><b style="color:var(--gold)">Not set</b></div>`:'')}</div>${mv}
     ${arranging?'</div>':'</button>'}`;}).join('')
     ||`<div class="empty">${q?'No supplier matches that search.':'No suppliers yet. Add one, or just type a new name when you add a bill.'}</div>`;
 }
@@ -1272,13 +1291,16 @@ $('payForm').addEventListener('submit',async e=>{
 });
 
 // Supplier
+function conPaint(){document.querySelectorAll('[data-con]').forEach(e=>e.hidden=!$('sCon').checked);}
 let editSup=null;
 function openSup(s){
   editSup=s||null;showErr('supErr','');
   $('supTitle').textContent=s?'Edit supplier':'New supplier';
+  {const c=s?contractOf(s,data()):{on:false,amount:0,rate:''};$('sCon').checked=c.on;$('sConAmt').value=c.amount||'';$('sConRate').value=c.rate||'';conPaint();}
   $('sName').value=s?s.name:'';$('sPhone').value=s?s.phone||'':'';$('sCat').value=s?s.cat||'other':'cement';$('sNote').value=s?s.note||'':'';
   $('supDlg').showModal();
 }
+$('sCon').addEventListener('change',conPaint);
 $('supForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!needDb('supErr'))return;
   const name=$('sName').value.trim();if(!name)return showErr('supErr','Enter a name.');
@@ -1286,7 +1308,7 @@ $('supForm').addEventListener('submit',async e=>{
   const btn=e.submitter;btn.disabled=true;
   try{
     const id=editSup?editSup.id:newId('s_');
-    const docv={name,phone:$('sPhone').value.trim(),cat:$('sCat').value,note:$('sNote').value.trim(),createdAt:editSup?(editSup.createdAt||Date.now()):Date.now()};
+    const docv={contract:{on:$('sCon').checked,amount:$('sCon').checked?num($('sConAmt').value):0,rate:$('sCon').checked?$('sConRate').value.trim():''},name,phone:$('sPhone').value.trim(),cat:$('sCat').value,note:$('sNote').value.trim(),createdAt:editSup?(editSup.createdAt||Date.now()):Date.now()};
     if(editSup&&typeof editSup.order==='number')docv.order=editSup.order;else if(!editSup)docv.order=Math.max(0,...real.suppliers.map(x=>typeof x.order==='number'?x.order:0))+1;
     if(editSup&&editSup.photo)docv.photo=editSup.photo;
     await db.doc('suppliers/'+id).set(docv);
@@ -1319,11 +1341,14 @@ function renderStmt(id){
   const d=data();const s=d.suppliers.find(x=>x.id===id);if(!s){$('stmtDlg').close();return;}
   $('stmtName').textContent=s.name;
   $('stmtMeta').textContent=(CATNAME[s.cat]||'Supplier')+(s.phone?' · '+s.phone:'');
-  $('stmtNote').textContent=s.note||'';
+  $('stmtNote').textContent=[s.note||'',(contractOf(s,d).rate?'Contract rate: '+contractOf(s,d).rate:'')].filter(Boolean).join(' · ');
   const b=supBal(d,id);
   const prs=payRows(d).filter(r=>r.sup===id).sort((a,c)=>(c.date||'').localeCompare(a.date||'')||(c.ts-a.ts));
-  const owe=b.bal>0.5;
-  $('stmtHead').innerHTML=`<div class="stat paid"><span class="eyebrow">Total paid</span><span class="v num">${fmt(b.paid)}</span></div>
+  const owe=b.bal>0.5,C=b.contract;
+  $('stmtHead').innerHTML=C.on?`<div class="stat"><span class="eyebrow">Contract</span><span class="v num">${C.amount?fmt(C.amount):'Not set'}</span></div>
+    <div class="stat paid"><span class="eyebrow">Total paid</span><span class="v num">${fmt(b.paid)}</span></div>
+    <div class="stat ${owe?'due':''}"><span class="eyebrow">${C.amount?(b.bal<-0.5?'Paid extra':'Balance'):'Payments'}</span><span class="v num">${C.amount?fmt(Math.abs(b.bal)):prs.length}</span></div>`
+   :`<div class="stat paid"><span class="eyebrow">Total paid</span><span class="v num">${fmt(b.paid)}</span></div>
     <div class="stat"><span class="eyebrow">Payments</span><span class="v num">${prs.length}</span></div>
     ${owe?`<div class="stat due"><span class="eyebrow">Contract balance</span><span class="v num">${fmt(b.bal)}</span></div>`:`<div class="stat"><span class="eyebrow">Last paid</span><span class="v num">${prs[0]?dfmt(prs[0].date):'—'}</span></div>`}`;
   $('stmtBody').innerHTML=prs.map(r=>`<tr><td class="num" style="white-space:nowrap">${dfmt(r.date)}</td><td>${esc(r.detail)}${r.sub?`<div class="sub">${esc(r.sub)}</div>`:''}${rcptBtn(r)}${(d.demo||!db)?'':`<button class="btn ghost small st-edit" type="button" data-sedit="pay:${esc(r.id)}">&#9998; Edit</button>`}</td><td class="r num qty">${r.qty?`${esc(unitShow(r.qty,r.unit))}<div class="sub" style="font-weight:400">@ ${fmt(r.rate)}/${esc(unitWord(r.unit))}</div>`:''}</td><td class="r num amt-pay">${fmt(r.pay)}</td></tr>`).join('')
