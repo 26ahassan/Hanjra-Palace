@@ -784,6 +784,8 @@ b.kn{font-weight:600}
   <div class="dlg">
     <div class="hd"><h2>Receipt</h2><button class="btn ghost small" type="button" data-close>Close</button></div>
     <div class="rcptview" id="rcptBody"></div>
+    <div class="hint" id="rcptCap" style="text-align:center"></div>
+    <div class="ftr" id="rcptActs" hidden><button class="btn primary" type="button" id="rcptShare" style="flex:1;justify-content:center;min-height:48px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg>Share receipt</button></div>
   </div>
 </dialog>
 
@@ -1098,7 +1100,8 @@ function filtered(d){
   return payRows(d).filter(r=>(!fs||r.sup===fs)&&(!fc||r.cat===fc)&&(!fm||(r.date||'').startsWith(fm))&&(!q||(r.supName+' '+r.detail+' '+r.sub).toLowerCase().includes(q)))
     .sort((a,b)=>(b.date||'').localeCompare(a.date||'')||(b.ts-a.ts));
 }
-const rcptBtn=r=>r.receipt?`<button class="rcpt" type="button" data-rcpt="${esc(r.receipt)}" data-rtype="${esc(r.receiptType)}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 1.5h8v13l-2-1.3-2 1.3-2-1.3-2 1.3z"/><path d="M6 5h4M6 8h4"/></svg>Receipt</button>`:'';
+const rcptCap=r=>[r.supName,fmt(r.pay||r.bill),dfmt(r.date),r.sub].filter(Boolean).join(' · ');
+const rcptBtn=r=>r.receipt?`<button class="rcpt" type="button" data-rcpt="${esc(r.receipt)}" data-rtype="${esc(r.receiptType)}" data-cap="${esc(rcptCap(r))}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 1.5h8v13l-2-1.3-2 1.3-2-1.3-2 1.3z"/><path d="M6 5h4M6 8h4"/></svg>Receipt</button>`:'';
 function renderLedger(d){
   const rows=filtered(d),canEdit=!d.demo&&!!db;
   $('ledgerBody').innerHTML=rows.map(r=>`<tr>
@@ -1370,9 +1373,9 @@ function openStmt(id){stmtSup=id;renderStmt(id);if(!$('stmtDlg').open)$('stmtDlg
 document.addEventListener('click',e=>{
   const c=e.target.closest('[data-sup]');if(c){if(suppressClick&&c.closest('#supList')){suppressClick=false;return;}openStmt(c.dataset.sup);return;}
   const r=e.target.closest('[data-rcpt]');
-  if(r){$('rcptBody').innerHTML='<div class="hint" style="padding:30px">Loading receipt…</div>';$('rcptDlg').showModal();
+  if(r){$('rcptBody').innerHTML='<div class="hint" style="padding:30px">Loading receipt…</div>';$('rcptActs').hidden=true;shareRc=null;$('rcptCap').textContent=r.dataset.cap||'';$('rcptDlg').showModal();
     fb.receipt(r.dataset.rcpt).then(rc=>{if(!rc){$('rcptBody').innerHTML='<div class="hint" style="padding:30px">This receipt photo is missing.</div>';return;}
-    const url=rc.data;
+    const url=rc.data;shareRc={data:rc.data,type:rc.type,cap:r.dataset.cap||''};$('rcptActs').hidden=false;
     $('rcptBody').innerHTML=rc.type==='application/pdf'
       ?`<a class="btn primary" href="${esc(url)}" download="receipt.pdf">Open PDF receipt</a>`
       :`<img src="${esc(url)}" alt="Receipt">`;
@@ -1464,6 +1467,18 @@ document.addEventListener('pointerup',e=>{if(e.pointerType!=='mouse')return;canc
 sl.addEventListener('contextmenu',e=>{if(e.target.closest('.scard'))e.preventDefault();});
 
 
+// ---------- share receipt ----------
+let shareRc=null;
+function dataUrlFile(u,type,cap){const b=atob(u.split(',')[1]);const a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
+  const ext=type==='application/pdf'?'pdf':'jpg';const nm=('receipt-'+(cap||'').replace(/[^A-Za-z0-9]+/g,'-').slice(0,40)).replace(/-+$/,'')+'.'+ext;
+  return new File([a],nm,{type});}
+$('rcptShare').addEventListener('click',async()=>{if(!shareRc)return;
+  const f=dataUrlFile(shareRc.data,shareRc.type,shareRc.cap);
+  const payload={files:[f],text:shareRc.cap,title:'Receipt'};
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share(payload);return;}
+      if(navigator.share){await navigator.share({text:shareRc.cap,title:'Receipt'});return;}
+      await downloads.save({filename:f.name,data:f});toast('Receipt saved');}
+  catch(e){if(e&&e.name==='AbortError')return;toast('Could not share. Try again.');}});
 // ---------- full backup (Firebase) ----------
 async function fullBackup(){
   const btn=$('bkBtn'),msg=$('bkMsg');btn.disabled=true;
