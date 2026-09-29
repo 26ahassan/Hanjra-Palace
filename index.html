@@ -517,6 +517,17 @@ b.kn{font-weight:600}
 .f input.autofill,.f select.autofill,.f textarea.autofill{animation:af 2.4s ease-out;border-color:var(--gold)}
 @media (prefers-reduced-motion:reduce){.ocrbox .spin{animation:none}}
 
+.sw-act{display:none}
+@media (max-width:720px){
+  #stmtDlg tbody{overflow:hidden}
+  #stmtDlg tbody tr{position:relative;overflow:visible;transition:transform .22s cubic-bezier(.2,.8,.2,1);touch-action:pan-y}
+  #stmtDlg tbody tr.swiping{transition:none}
+  #stmtDlg .sw-act{display:flex;position:absolute;top:0;bottom:0;right:-96px;width:86px;padding:0!important}
+  #stmtDlg .sw-btn{flex:1;border:0;border-radius:14px;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  #stmtDlg .sw-btn svg{width:22px;height:22px}
+  #stmtDlg .sw-btn.wait{opacity:.7}
+}
+
 .fbgate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:20px 16px;overflow:auto}
 .fbcard{width:min(420px,100%);background:var(--surface);border-radius:24px;box-shadow:var(--shadow-lg);overflow:hidden}
 .fbimg{width:100%;height:190px;object-fit:cover;display:block;max-width:none}
@@ -1496,7 +1507,7 @@ function renderStmt(id){
    :`<div class="stat paid"><span class="eyebrow">Total paid</span><span class="v num">${fmt(b.paid)}</span></div>
     <div class="stat"><span class="eyebrow">Payments</span><span class="v num">${prs.length}</span></div>
     ${owe?`<div class="stat due"><span class="eyebrow">Contract balance</span><span class="v num">${fmt(b.bal)}</span></div>`:`<div class="stat"><span class="eyebrow">Last paid</span><span class="v num">${prs[0]?dfmt(prs[0].date):'—'}</span></div>`}`;
-  $('stmtBody').innerHTML=prs.map(r=>`<tr><td class="num" style="white-space:nowrap">${dfmt(r.date)}</td><td>${esc(r.detail)}${r.sub?`<div class="sub">${esc(r.sub)}</div>`:''}${rcptBtn(r)}${(d.demo||!db)?'':`<button class="btn ghost small st-edit" type="button" data-sedit="pay:${esc(r.id)}">&#9998; Edit</button>`}</td><td class="r num qty">${r.qty?`${esc(unitShow(r.qty,r.unit))}<div class="sub" style="font-weight:400">@ ${fmt(r.rate)}/${esc(unitWord(r.unit))}</div>`:''}</td><td class="r num amt-pay">${fmt(r.pay)}</td></tr>`).join('')
+  $('stmtBody').innerHTML=prs.map(r=>`<tr${r.receipt?` data-rc="${esc(r.receipt)}"`:''}><td class="num" style="white-space:nowrap">${dfmt(r.date)}</td><td>${esc(r.detail)}${r.sub?`<div class="sub">${esc(r.sub)}</div>`:''}${rcptBtn(r)}${(d.demo||!db)?'':`<button class="btn ghost small st-edit" type="button" data-sedit="pay:${esc(r.id)}">&#9998; Edit</button>`}</td><td class="r num qty">${r.qty?`${esc(unitShow(r.qty,r.unit))}<div class="sub" style="font-weight:400">@ ${fmt(r.rate)}/${esc(unitWord(r.unit))}</div>`:''}</td><td class="r num amt-pay">${fmt(r.pay)}</td>${r.receipt?`<td class="sw-act"><button type="button" class="sw-btn" data-swshare="${esc(r.receipt)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span>Share</span></button></td>`:''}</tr>`).join('')
     ||'<tr><td colspan="4" class="empty">No payments for this supplier yet.</td></tr>';
   if(d.demo||!db){$('stmtActs').innerHTML='';$('stmtTop').innerHTML='';return;}
   $('stmtTop').innerHTML=`<button class="btn primary" type="button" id="stPay">+ Add payment</button><button class="btn" type="button" id="stEdit">&#9998; Edit info</button>`;
@@ -1612,15 +1623,35 @@ sl.addEventListener('contextmenu',e=>{if(e.target.closest('.scard'))e.preventDef
 // ---------- share receipt ----------
 let shareRc=null;
 function dataUrlFile(u,type,cap){const b=atob(u.split(',')[1]);const a=new Uint8Array(b.length);for(let i=0;i<b.length;i++)a[i]=b.charCodeAt(i);
-  const ext=type==='application/pdf'?'pdf':'jpg';const nm=('receipt-'+(cap||'').replace(/[^A-Za-z0-9]+/g,'-').slice(0,40)).replace(/-+$/,'')+'.'+ext;
+  const ext=type==='application/pdf'?'pdf':'jpg';const nm='receipt.'+ext;
   return new File([a],nm,{type});}
 $('rcptShare').addEventListener('click',async()=>{if(!shareRc)return;
   const f=dataUrlFile(shareRc.data,shareRc.type,shareRc.cap);
-  const payload={files:[f],text:shareRc.cap,title:'Receipt'};
-  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share(payload);return;}
-      if(navigator.share){await navigator.share({text:shareRc.cap,title:'Receipt'});return;}
+  await shareFile(f);});
+async function shareFile(f){
+  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f]});return;}
       await downloads.save({filename:f.name,data:f});toast('Receipt saved');}
-  catch(e){if(e&&e.name==='AbortError')return;toast('Could not share. Try again.');}});
+  catch(e){if(e&&e.name==='AbortError')return;toast('Could not share. Tap Share again.');}}
+// swipe left on a supplier's payment to share its receipt
+(function(){
+  const body=$('stmtBody');let row=null,x0=0,y0=0,dx=0,dir='',open=null;const W=96;
+  const setX=(tr,x)=>{tr.style.transform=x?`translateX(${x}px)`:'';};
+  const close=()=>{if(open){setX(open,0);open=null;}};
+  function prefetch(tr){const id=tr.dataset.rc;const btn=tr.querySelector('.sw-btn');if(!id||!btn||btn.dataset.ready)return;
+    btn.classList.add('wait');fb.receipt(id).then(rc=>{btn.classList.remove('wait');if(rc){btn._rc=rc;btn.dataset.ready='1';}}).catch(()=>btn.classList.remove('wait'));}
+  body.addEventListener('touchstart',e=>{const tr=e.target.closest('tr[data-rc]');if(e.target.closest('.sw-btn'))return;
+    if(open&&open!==tr)close();row=tr;if(!tr)return;x0=e.touches[0].clientX;y0=e.touches[0].clientY;dx=0;dir='';},{passive:true});
+  body.addEventListener('touchmove',e=>{if(!row)return;const t=e.touches[0],mx=t.clientX-x0,my=t.clientY-y0;
+    if(!dir){if(Math.abs(mx)<8&&Math.abs(my)<8)return;dir=Math.abs(mx)>Math.abs(my)?'h':'v';if(dir==='h')row.classList.add('swiping');}
+    if(dir!=='h')return;e.preventDefault();const base=open===row?-W:0;dx=Math.max(-W-20,Math.min(0,base+mx));setX(row,dx);},{passive:false});
+  body.addEventListener('touchend',()=>{if(!row)return;row.classList.remove('swiping');
+    if(dir==='h'){if(dx<-40){setX(row,-W);open=row;prefetch(row);}else{setX(row,0);if(open===row)open=null;}}
+    row=null;dir='';});
+  body.addEventListener('click',async e=>{const b=e.target.closest('.sw-btn');if(!b)return;e.stopPropagation();
+    if(!b._rc){b.classList.add('wait');try{const rc=await fb.receipt(b.dataset.swshare);if(rc){b._rc=rc;b.dataset.ready='1';toast('Receipt ready. Tap Share again.');}}catch(_){toast('Could not load the receipt.');}b.classList.remove('wait');return;}
+    await shareFile(dataUrlFile(b._rc.data,b._rc.type,'receipt'));close();});
+  $('stmtDlg').addEventListener('close',close);
+})();
 // ---------- full backup (Firebase) ----------
 async function fullBackup(){
   const btn=$('bkBtn'),msg=$('bkMsg');btn.disabled=true;
