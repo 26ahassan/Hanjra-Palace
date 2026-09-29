@@ -1,7 +1,7 @@
 <!doctype html>
 <html lang="en"><head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,viewport-fit=cover">
 <title>Hanjra Palace</title>
 <meta name="theme-color" content="#0f5b50">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -9,6 +9,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Hanjra Palace">
 <link rel="manifest" href="manifest.json">
+<script>try{var m=localStorage.getItem('hp-mode'),t=localStorage.getItem('hp-theme');if(m==='light'||m==='dark')document.documentElement.dataset.theme=m;if(t==='palace')document.documentElement.dataset.palette=t;}catch(e){}</script>
 <link rel="apple-touch-icon" href="icon-180.png">
 <link rel="icon" href="icon-192.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
@@ -527,6 +528,33 @@ b.kn{font-weight:600}
   #stmtDlg .sw-btn svg{width:22px;height:22px}
   #stmtDlg .sw-btn.wait{opacity:.7}
 }
+/* ===== settings page + themes ===== */
+.setttl{font-family:var(--serif);font-weight:400;font-size:28px;margin:4px 2px 12px}
+.setpage{display:flex;flex-direction:column;gap:14px}
+#tab-settings .sep{background:var(--surface);border:0;border-radius:18px;padding:16px;box-shadow:var(--shadow);margin:0}
+.setcard{display:flex;flex-direction:column;gap:12px}
+.sethd .eyebrow{font-size:11.5px}
+#tab-settings .ftr{justify-content:flex-end}
+.seg{display:flex;background:var(--surface-2);border-radius:14px;padding:4px;gap:4px;box-shadow:inset 0 0 0 1px var(--line)}
+.seg button{flex:1;border:0;background:none;border-radius:10px;padding:10px 6px;font:inherit;font-weight:700;color:var(--ink-3);cursor:pointer}
+.seg button[aria-checked="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.themes{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.themes button{display:flex;align-items:center;gap:10px;border:2px solid transparent;background:var(--surface-2);border-radius:14px;padding:10px;font:inherit;color:var(--ink);cursor:pointer;text-align:left}
+.themes button[aria-checked="true"]{border-color:var(--accent)}
+.themes .sw{width:40px;height:40px;border-radius:12px;display:flex;align-items:flex-end;justify-content:center;gap:4px;padding-bottom:7px;flex:none;box-shadow:inset 0 0 0 1px rgba(0,0,0,.08)}
+.themes .sw i{width:11px;height:11px;border-radius:50%}
+.themes b{font-size:13.5px}
+:root{--deep:#0f5b50}
+.hi0{background:linear-gradient(150deg,var(--deep),color-mix(in srgb,var(--deep) 70%,#000))!important;color:#fff}
+/* Palace Red */
+:root[data-palette="palace"]{--deep:#7d231c;--bg:#f6efe2;--surface:#fffaf1;--surface-2:#faf3e6;--line:#eadfcb;--line-strong:#d9c9ad;--ink:#2a1a14;--ink-2:#5e4a3e;--ink-3:#8f7a6b;--accent:#8e2a22;--accent-ink:#fff8ee;--accent-soft:#f4e0d6;--gold:#b88a3a;--gold-soft:#f3e6c9;--grid:#efe5d3;--glass:rgba(255,250,241,.86)}
+@media (prefers-color-scheme: dark){
+  :root[data-palette="palace"]:not([data-theme="light"]){--deep:#8e2a22;--bg:#17100e;--surface:#211714;--surface-2:#2a1d19;--line:#3a2a24;--line-strong:#4f3a31;--ink:#f3e9dc;--ink-2:#cdbba9;--ink-3:#9c8878;--accent:#e0806a;--accent-ink:#1a0d09;--accent-soft:#3e2019;--gold:#d9b16a;--gold-soft:#3a2c17;--grid:#2c201b;--glass:rgba(33,23,20,.86)}
+}
+:root[data-palette="palace"][data-theme="dark"]{--deep:#8e2a22;--bg:#17100e;--surface:#211714;--surface-2:#2a1d19;--line:#3a2a24;--line-strong:#4f3a31;--ink:#f3e9dc;--ink-2:#cdbba9;--ink-3:#9c8878;--accent:#e0806a;--accent-ink:#1a0d09;--accent-soft:#3e2019;--gold:#d9b16a;--gold-soft:#3a2c17;--grid:#2c201b;--glass:rgba(33,23,20,.86)}
+@media (max-width:720px){
+  input,select,textarea,.pastezone,.toolbar input,.toolbar select,.f input,.f select,.f textarea{font-size:16px!important}
+}
 
 .fbgate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:20px 16px;overflow:auto}
 .fbcard{width:min(420px,100%);background:var(--surface);border-radius:24px;box-shadow:var(--shadow-lg);overflow:hidden}
@@ -535,7 +563,7 @@ b.kn{font-weight:600}
 .fbt{font-size:30px;margin-bottom:4px}
 .fbgate .err:empty{display:none}
 .stometer{height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
-.stometer i{display:block;height:100%;border-radius:999px;background:var(--paid);transition:width .4s}
+.stometer i{display:block;height:100%;min-width:6px;border-radius:999px;background:var(--paid);transition:width .4s}
 .stometer i.warn{background:var(--gold)}.stometer i.bad{background:var(--due)}
 </style>
 
@@ -581,6 +609,7 @@ b.kn{font-weight:600}
     <button class="tab" role="tab" data-tab="overview" aria-selected="true" type="button">Overview</button>
     <button class="tab" role="tab" data-tab="suppliers" aria-selected="false" type="button">Suppliers<span class="count num" id="cntSup"></span></button>
     <button class="tab" role="tab" data-tab="ledger" aria-selected="false" type="button">Transactions<span class="count num" id="cntTx"></span></button>
+    <button class="tab" role="tab" id="tabSettings" aria-selected="false" type="button">Settings</button>
   </nav>
 
   <section id="tab-overview">
@@ -649,6 +678,51 @@ b.kn{font-weight:600}
       </div>
     </div>
   </section>
+
+  <section id="tab-settings" hidden>
+    <h2 class="setttl">Settings</h2>
+  <form class="setpage" id="budForm">
+    <div class="sep setcard" id="lookCard">
+      <div class="sethd"><span class="eyebrow">Appearance</span></div>
+      <div class="f"><label>Night mode</label><div class="seg" id="modeSeg" role="radiogroup" aria-label="Night mode"><button type="button" data-mode="auto">Auto</button><button type="button" data-mode="light">Day</button><button type="button" data-mode="dark">Night</button></div><span class="hint">Auto follows your phone's setting.</span></div>
+      <div class="f"><label>Theme</label><div class="themes" id="themeSeg" role="radiogroup" aria-label="Theme"></div></div>
+    </div>
+    <div class="sep setcard"><div class="sethd"><span class="eyebrow">Project &amp; budget</span></div>
+    <div class="fgrid">
+      <div class="f"><label for="uName">Project name</label><input id="uName" placeholder="My House"></div>
+      <div class="f"><label for="uSub">Plot / location <em>(optional)</em></label><input id="uSub" placeholder="10 Marla, DHA Phase 6"></div>
+      <div class="f"><label for="uBudget">Total budget</label><input id="uBudget" type="number" step="any" min="0" inputmode="decimal"></div>
+      <div class="f"><label for="uCur">Currency</label><select id="uCur"></select></div>
+    </div>
+    <div class="err" id="budErr" hidden></div>
+    <div class="ftr"><button class="btn primary" type="submit">Save</button></div>
+    </div>
+    <div class="sep" id="bkWrap" style="display:flex;flex-direction:column;gap:10px">
+      <div><span class="eyebrow">Backup</span> <span class="hint">Download saves everything, including receipt photos, as one file. Upload puts a backup file back into this app.</span></div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="button" id="bkBtn">Download full backup</button><label class="btn" for="bkFile" style="cursor:pointer">Upload backup file</label><input id="bkFile" type="file" accept=".json,application/json" hidden></div>
+      <div class="hint" id="bkMsg"></div>
+    </div>
+    <div class="sep" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span class="eyebrow">Storage used</span><span class="num" id="stoPct" style="font-weight:700"></span></div>
+      <div class="stometer"><i id="stoBar"></i></div>
+      <div class="hint num" id="stoMsg">Checking…</div>
+      <button class="btn ghost small" type="button" id="stoBtn" style="align-self:flex-start" hidden>Recalculate</button>
+    </div>
+    <div class="sep" id="fidWrap" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap" hidden>
+      <div style="display:flex;flex-direction:column;gap:2px"><span class="eyebrow">Face ID lock</span><span class="hint" id="fidMsg">Ask for Face ID every time the app opens.</span></div>
+      <button class="btn" type="button" id="fidBtn">Turn on</button>
+    </div>
+    <div class="sep" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
+      <div><span class="eyebrow">Signed in</span> <span class="hint" id="fbWho"></span></div>
+      <button class="btn danger" type="button" id="fbOut">Sign out</button>
+    </div>
+    <div class="sep" style="display:flex;flex-direction:column;gap:8px">
+      <div><span class="eyebrow">Duplicates</span> <span class="hint">Look through every payment for the same reference, the same receipt photo, or the same date and amount.</span></div>
+      <button class="btn" type="button" id="dupBtn" style="align-self:flex-start">Check all for duplicates</button>
+      <div id="dupAll"></div>
+    </div>
+  </form>
+  </section>
 </div>
 
 <div class="actionbar">
@@ -662,7 +736,7 @@ b.kn{font-weight:600}
   <button class="nb" type="button" data-tab="suppliers" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.3-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><circle cx="17.5" cy="9" r="2.5"/><path d="M17 14.6c2.5.2 4.1 1.8 4.5 4.4"/></svg>Suppliers</button>
   <button class="nb plus" type="button" id="navAdd" aria-label="Add entry"><span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></span></button>
   <button class="nb" type="button" data-tab="ledger" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M5 3h14v18l-2.5-1.5L14 21l-2-1.5L10 21l-2.5-1.5L5 21z"/><path d="M9 8h6M9 12h6M9 16h3"/></svg>Entries</button>
-  <button class="nb" type="button" id="navSettings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>Budget</button>
+  <button class="nb" type="button" id="navSettings" aria-selected="false"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2.2"/><circle cx="8" cy="17" r="2.2"/></svg>Settings</button>
 </nav>
 
 <dialog id="addDlg">
@@ -753,47 +827,6 @@ b.kn{font-weight:600}
 </dialog>
 
 <!-- Budget & settings -->
-<dialog id="budDlg">
-  <form class="dlg" id="budForm" method="dialog">
-    <div class="hd"><h2>Budget &amp; settings</h2><button class="btn ghost small" type="button" data-close>Close</button></div>
-    <div class="fgrid">
-      <div class="f"><label for="uName">Project name</label><input id="uName" placeholder="My House"></div>
-      <div class="f"><label for="uSub">Plot / location <em>(optional)</em></label><input id="uSub" placeholder="10 Marla, DHA Phase 6"></div>
-      <div class="f"><label for="uBudget">Total budget</label><input id="uBudget" type="number" step="any" min="0" inputmode="decimal"></div>
-      <div class="f"><label for="uCur">Currency</label><select id="uCur"></select></div>
-    </div>
-    <div class="sep" style="display:flex;flex-direction:column;gap:10px">
-      <div><span class="eyebrow">Budget per material</span> <span class="hint">Optional. Leave blank for materials you don't want to track.</span></div>
-      <div class="fgrid" id="catBudgetInputs"></div>
-    </div>
-    <div class="sep" id="bkWrap" style="display:flex;flex-direction:column;gap:10px">
-      <div><span class="eyebrow">Backup</span> <span class="hint">Download everything, including receipt photos, as one file. Import puts a backup file into this app.</span></div>
-      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="button" id="bkBtn">Download full backup</button><label class="btn" for="bkFile" style="cursor:pointer">Import backup file</label><input id="bkFile" type="file" accept=".json,application/json" hidden></div>
-      <div class="hint" id="bkMsg"></div>
-    </div>
-    <div class="sep" style="display:flex;flex-direction:column;gap:8px">
-      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span class="eyebrow">Storage used</span><span class="num" id="stoPct" style="font-weight:700"></span></div>
-      <div class="stometer"><i id="stoBar"></i></div>
-      <div class="hint num" id="stoMsg">Checking…</div>
-      <button class="btn ghost small" type="button" id="stoBtn" style="align-self:flex-start" hidden>Recalculate</button>
-    </div>
-    <div class="sep" id="fidWrap" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap" hidden>
-      <div style="display:flex;flex-direction:column;gap:2px"><span class="eyebrow">Face ID lock</span><span class="hint" id="fidMsg">Ask for Face ID every time the app opens.</span></div>
-      <button class="btn" type="button" id="fidBtn">Turn on</button>
-    </div>
-    <div class="sep" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
-      <div><span class="eyebrow">Signed in</span> <span class="hint" id="fbWho"></span></div>
-      <button class="btn danger" type="button" id="fbOut">Sign out</button>
-    </div>
-    <div class="sep" style="display:flex;flex-direction:column;gap:8px">
-      <div><span class="eyebrow">Duplicates</span> <span class="hint">Look through every payment for the same reference, the same receipt photo, or the same date and amount.</span></div>
-      <button class="btn" type="button" id="dupBtn" style="align-self:flex-start">Check all for duplicates</button>
-      <div id="dupAll"></div>
-    </div>
-    <div class="err" id="budErr" hidden></div>
-    <div class="ftr"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save settings</button></div>
-  </form>
-</dialog>
 
 <!-- Supplier statement -->
 <dialog id="stmtDlg" class="wide">
@@ -1157,20 +1190,21 @@ $('fCat').innerHTML='<option value="">All materials</option>'+opts(CATS);
 $('bUnit').innerHTML=UNITS.map(u=>`<option>${esc(u)}</option>`).join('');$('pUnit').innerHTML=$('bUnit').innerHTML;$('pCat').innerHTML=opts(CATS);
 const mo=METHODS.map(m=>`<option>${esc(m)}</option>`).join('');$('bMethod').innerHTML=mo;$('pMethod').innerHTML=mo;
 $('uCur').innerHTML=CURRENCIES.map(c=>`<option value="${esc(c[0])}">${esc(c[1])}</option>`).join('');
-$('catBudgetInputs').innerHTML=CATS.map(([k,n])=>`<div class="f"><label for="cb_${k}">${esc(n)}</label><input id="cb_${k}" type="number" step="any" min="0" inputmode="decimal" placeholder="—"></div>`).join('');
 
 // ---------- tabs, filters ----------
 function setTab(t){
   document.querySelectorAll('.tab,.nb[data-tab]').forEach(x=>x.setAttribute('aria-selected',String(x.dataset.tab===t)));
-  ['overview','suppliers','ledger'].forEach(k=>$('tab-'+k).hidden=k!==t);
+  ['overview','suppliers','ledger','settings'].forEach(k=>$('tab-'+k).hidden=k!==t);
+  ['navSettings','tabSettings'].forEach(id=>{const e=$(id);if(e)e.setAttribute('aria-selected',String(t==='settings'));});
   if(t==='overview')window.scrollTo(0,0);else{const n=document.querySelector('nav.tabs');const el=n&&n.offsetParent?n:$('tab-'+t);const y=el.getBoundingClientRect().top+scrollY-8;window.scrollTo(0,Math.max(0,y));}
-  try{localStorage.setItem('hbl-tab',t);}catch(e){}
+  if(t!=='settings')try{localStorage.setItem('hbl-tab',t);}catch(e){}
 }
 document.querySelectorAll('.tab,.nb[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 $('chart').addEventListener('click',e=>{const b=e.target.closest('.cbar');if(!b)return;selMonth=b.dataset.k;renderChart(data());});
 $('seeAll').addEventListener('click',()=>setTab('ledger'));
 $('navAdd').addEventListener('click',()=>$('addDlg').showModal());
 $('navSettings').addEventListener('click',()=>$('editBudgetBtn').click());
+$('tabSettings').addEventListener('click',()=>$('editBudgetBtn').click());
 document.querySelectorAll('[data-add]').forEach(b=>b.addEventListener('click',()=>{$('addDlg').close();const k=b.dataset.add;k==='bill'?openBill():k==='pay'?openPay():openSup();}));
 try{const t=localStorage.getItem('hbl-tab');if(t&&$('tab-'+t))setTab(t);}catch(e){}
 ['fSup','fCat','fMonth'].forEach(id=>$(id).addEventListener('change',()=>renderLedger(data())));
@@ -1473,20 +1507,34 @@ $('supForm').addEventListener('submit',async e=>{
   finally{btn.disabled=false;}
 });
 
+// Appearance
+const THEMES=[['green','Hanjra Green','#0f5b50','#a97c22','#ece7de'],['palace','Palace Red','#8e2a22','#b88a3a','#f6efe2']];
+const lookGet=(k,d)=>{try{return localStorage.getItem(k)||d;}catch(e){return d;}};
+function applyLook(){const r=document.documentElement,m=lookGet('hp-mode',''),t=lookGet('hp-theme','green');
+  if(m==='light'||m==='dark')r.dataset.theme=m;else if(m==='auto')r.removeAttribute('data-theme');
+  if(t&&t!=='green')r.dataset.palette=t;else r.removeAttribute('data-palette');
+  if(t&&!THEMES.some(x=>x[0]===t))r.removeAttribute('data-palette');
+  const tc=document.querySelector('meta[name=theme-color]');if(tc){const th=THEMES.find(x=>x[0]===t)||THEMES[0];tc.content=th[2];}}
+function paintLook(){const m=lookGet('hp-mode','auto'),t=lookGet('hp-theme','green');
+  document.querySelectorAll('#modeSeg button').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.mode===m)));
+  $('themeSeg').innerHTML=THEMES.map(([k,n,a,g,bg])=>`<button type="button" data-theme-k="${k}" aria-checked="${k===t}"><span class="sw" style="background:${bg}"><i style="background:${a}"></i><i style="background:${g}"></i></span><b>${n}</b></button>`).join('');}
+$('modeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b)return;try{localStorage.setItem('hp-mode',b.dataset.mode);}catch(_){}applyLook();paintLook();});
+$('themeSeg').addEventListener('click',e=>{const b=e.target.closest('[data-theme-k]');if(!b)return;try{localStorage.setItem('hp-theme',b.dataset.themeK);}catch(_){}applyLook();paintLook();});
+applyLook();paintLook();
+
 // Settings
 $('editBudgetBtn').addEventListener('click',()=>{
   showErr('budErr','');const s=real.settings||{};
   $('uName').value=s.name||'';$('uSub').value=s.sub||'';$('uBudget').value=s.budget||'';$('uCur').value=s.currency||'Rs';
-  CATS.forEach(([k])=>$('cb_'+k).value=(s.catBudgets&&s.catBudgets[k])||'');
-  $('budDlg').showModal();
+  setTab('settings');paintLook();
 });
 $('budForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!needDb('budErr'))return;
-  const catBudgets={};CATS.forEach(([k])=>{const v=num($('cb_'+k).value);if(v>0)catBudgets[k]=v;});
+  const catBudgets=(real.settings&&real.settings.catBudgets)||{};
   const btn=e.submitter;btn.disabled=true;
   try{
     await db.doc('settings/main').set({name:$('uName').value.trim()||'My House',sub:$('uSub').value.trim(),budget:num($('uBudget').value),currency:$('uCur').value,catBudgets});
-    $('budDlg').close();toast('Settings saved');
+    toast('Settings saved');
   }catch(err){showErr('budErr',writeErr(err));}
   finally{btn.disabled=false;}
 });
@@ -1678,13 +1726,14 @@ const FREE=1024*1024*1024;
 const mb=n=>n>=1024*1024*1024?(n/1073741824).toFixed(2)+' GB':(n/1048576).toFixed(n<10485760?1:0)+' MB';
 function recBytes(){const all=[...real.suppliers,...real.bills,...real.pays];return all.reduce((a,r)=>a+JSON.stringify(r).length+120,0)+JSON.stringify(real.settings||{}).length;}
 function stoPaint(u){const rec=recBytes(),rb=u?u.bytes:0,tot=rec+rb,pct=tot/FREE*100;
-  $('stoBar').style.width=Math.max(pct,0.6).toFixed(2)+'%';
+  $('stoBar').style.width=Math.max(pct,2).toFixed(2)+'%';
   $('stoBar').className=pct>=90?'bad':pct>=70?'warn':'';
   $('stoPct').textContent=(pct<1?pct.toFixed(1):Math.round(pct))+'%';
   $('stoMsg').textContent=u?`About ${mb(tot)} of 1 GB free space. Receipt photos: ${u.count} (${mb(rb)}). Entries: ${real.bills.length+real.pays.length} (${mb(rec)}).`+(pct>=70?' Space is getting full. Ask Claude to shrink the photos.':'')
     :'Receipt photos have not been measured yet. Tap Recalculate once.';
   $('stoBtn').hidden=!!u&&pct<70;}
-async function stoLoad(){try{stoPaint(await fb.receiptUsage());}catch(e){$('stoMsg').textContent='Could not read storage. Check your internet.';}}
+let stoAuto=false;
+async function stoLoad(){try{const u=await fb.receiptUsage();if(!u&&!stoAuto){stoAuto=true;$('stoMsg').textContent='Measuring receipt photos…';stoPaint(await fb.recalcUsage());return;}stoPaint(u);}catch(e){$('stoMsg').textContent='Could not read storage. Check your internet.';}}
 $('stoBtn').addEventListener('click',async()=>{const b=$('stoBtn');b.disabled=true;$('stoMsg').textContent='Measuring receipt photos…';
   try{stoPaint(await fb.recalcUsage());}catch(e){$('stoMsg').textContent='Could not measure. Check your internet.';}finally{b.disabled=false;}});
 $('editBudgetBtn').addEventListener('click',stoLoad);
