@@ -503,6 +503,20 @@ b.kn{font-weight:600}
 .ctog input:focus-visible+.sl{outline:2px solid var(--accent);outline-offset:2px}
 .ctog b{display:block;font-size:15px;color:var(--ink)}.ctog small{color:var(--ink-3);font-size:12.5px;font-weight:400}
 
+.ocrbox{background:var(--accent-soft);border-radius:12px;padding:10px 12px;font-size:13.5px;color:var(--ink);line-height:1.45}
+.ocrbox small{color:var(--ink-2)}
+.ocrbox.err{background:var(--due-soft);color:var(--due)}
+.ocrbox .spin{display:inline-block;width:14px;height:14px;border-radius:50%;border:2px solid var(--accent);border-right-color:transparent;margin-right:8px;vertical-align:-2px;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dupbox{background:var(--due-soft);color:var(--ink);border-radius:12px;padding:10px 12px;font-size:13.5px;line-height:1.5}
+.dupbox b{color:var(--due);display:block;margin-bottom:2px}
+.dupbox em{color:var(--ink-3);font-style:normal}
+.dupgrp{background:var(--surface-2);border-radius:12px;padding:10px 12px;font-size:13px;line-height:1.5;margin-top:6px}
+.dupgrp b{color:var(--due)}
+@keyframes af{from{background:var(--gold-soft)}}
+.f input.autofill,.f select.autofill,.f textarea.autofill{animation:af 2.4s ease-out;border-color:var(--gold)}
+@media (prefers-reduced-motion:reduce){.ocrbox .spin{animation:none}}
+
 .fbgate{position:fixed;inset:0;z-index:100;background:var(--bg);display:grid;place-items:center;padding:20px 16px;overflow:auto}
 .fbcard{width:min(420px,100%);background:var(--surface);border-radius:24px;box-shadow:var(--shadow-lg);overflow:hidden}
 .fbimg{width:100%;height:190px;object-fit:cover;display:block;max-width:none}
@@ -689,6 +703,8 @@ b.kn{font-weight:600}
   <form class="dlg" id="payForm" method="dialog">
     <div class="hd"><div><span class="eyebrow">Money paid to a supplier</span><h2 id="payTitle">Add payment</h2></div><button class="btn ghost small" type="button" data-close>Close</button></div>
     <div class="fgrid">
+      <div class="f full" data-assets><label for="pFile">Receipt <em>(paste or choose it first, the form fills itself)</em></label><input id="pFile" type="file" accept="image/*,application/pdf"><div class="pastezone" id="pPaste" contenteditable="true" role="textbox" aria-label="Paste receipt screenshot here" data-k="p"></div><div class="pasteprev" id="pPrev" hidden><img alt="Pasted receipt" id="pPrevImg"><span>Pasted receipt ready</span><button class="btn ghost small" type="button" data-unpaste="p">Remove</button></div><span class="hint" id="pFileNote"></span></div>
+      <div class="f full ocrbox" id="pOcr" hidden></div>
       <div class="f"><label for="pDate">Date</label><input id="pDate" type="date" required></div>
       <div class="f"><label for="pSup">Supplier</label><input id="pSup" list="supNames" required autocomplete="off" placeholder="Pick or type a new name"><span class="hint" id="pSupBal"></span></div>
       <div class="f"><label for="pAmt">Amount</label><input id="pAmt" type="number" step="any" min="0" inputmode="decimal" required></div>
@@ -700,8 +716,8 @@ b.kn{font-weight:600}
       <div class="f" data-pm><label for="pRate" id="pRateLbl">Rate per bag</label><input id="pRate" type="number" step="any" min="0" inputmode="decimal" placeholder="e.g. 1500"><span class="hint" id="pCalc"></span></div>
       <div class="f full"><label for="pRef">Reference <em>(optional)</em></label><input id="pRef" placeholder="Cheque no., transaction ID"></div>
       <div class="f full"><label for="pNote">Note <em>(optional)</em></label><textarea id="pNote" placeholder="Who paid, advance for next delivery…"></textarea></div>
-      <div class="f full" data-assets><label for="pFile">Receipt photo or PDF <em>(optional)</em></label><input id="pFile" type="file" accept="image/*,application/pdf"><div class="pastezone" id="pPaste" contenteditable="true" role="textbox" aria-label="Paste receipt screenshot here" data-k="p"></div><div class="pasteprev" id="pPrev" hidden><img alt="Pasted receipt" id="pPrevImg"><span>Pasted receipt ready</span><button class="btn ghost small" type="button" data-unpaste="p">Remove</button></div><span class="hint" id="pFileNote"></span></div>
     </div>
+    <div class="dupbox" id="pDup" hidden></div>
     <div class="err" id="payErr" hidden></div>
     <div class="ftr"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save payment</button></div>
   </form>
@@ -757,6 +773,11 @@ b.kn{font-weight:600}
     <div class="sep" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap">
       <div><span class="eyebrow">Signed in</span> <span class="hint" id="fbWho"></span></div>
       <button class="btn danger" type="button" id="fbOut">Sign out</button>
+    </div>
+    <div class="sep" style="display:flex;flex-direction:column;gap:8px">
+      <div><span class="eyebrow">Duplicates</span> <span class="hint">Look through every payment for the same reference, the same receipt photo, or the same date and amount.</span></div>
+      <button class="btn" type="button" id="dupBtn" style="align-self:flex-start">Check all for duplicates</button>
+      <div id="dupAll"></div>
     </div>
     <div class="err" id="budErr" hidden></div>
     <div class="ftr"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save settings</button></div>
@@ -1166,7 +1187,7 @@ async function ensureSupplier(name,cat){
 const pasted={b:null,p:null};
 function setPasted(k,f){
   pasted[k]=f;const pv=$(k+'Prev'),img=$(k+'PrevImg');
-  if(f){try{img.src=URL.createObjectURL(f);}catch(e){}pv.hidden=false;$(k+'File').value='';toast('Receipt pasted');}
+  if(f){try{img.src=URL.createObjectURL(f);}catch(e){}pv.hidden=false;$(k+'File').value='';toast('Receipt pasted');if(k==='p')setTimeout(()=>onReceipt(f),0);}
   else{pv.hidden=true;img.removeAttribute('src');}
   $(k+'Paste').textContent='';
 }
@@ -1271,13 +1292,134 @@ function openPay(p,supId){
   $('pFile').value='';setPasted('p',null);$('pFileNote').textContent=p&&p.receipt?'A receipt is attached. Choose a file to replace it.':'';
   document.querySelectorAll('[data-pm]').forEach(el=>el.hidden=!!p);
   $('pCat').value=(s&&s.cat)||'cement';$('pQty').value='';$('pRate').value='';$('pUnit').value='bags';payCalc();
+  ['pRef','pDate','pAmt','pSup','pMethod','pNote'].forEach(id=>{delete $(id).dataset.t;$(id).classList.remove('autofill');});
+  if(s&&!p)$('pSup').dataset.t='1';
+  ocrSeq++;ocrMsg('');pendingHash=null;dupAck=false;$('pDup').hidden=true;
   payHint();$('payDlg').showModal();
 }
+// ---------- receipt reader (parse) ----------
+const MONS={jan:1,feb:2,mar:3,apr:4,may:5,jun:6,jul:7,aug:8,sep:9,oct:10,nov:11,dec:12};
+function parseReceipt(raw){
+  const text=(raw||'').replace(/\r/g,'');
+  const lines=text.split('\n').map(l=>l.trim()).filter(Boolean);
+  const out={};
+  // reference
+  let m;
+  if((m=text.match(/\bC\s?M\s?(\d{12,20})\b/)||(/Reference/i.test(text)&&text.match(/\bM(\d{13,20})\b/))))out.ref='Raast CM'+m[1];
+  else if((m=text.match(/\b(0406\d{12})\b/)))out.ref='ACE Money Transfer '+m[1];
+  else if((m=text.match(/Transaction\s+Reference\s+(?:Number|No\.?)[^\d]{0,30}(\d{12,24})/i)))out.ref='Transfer '+m[1];
+  else if((m=text.match(/(?:Reference(?:\s+(?:Number|No\.?))?|Ref\.?(?:\s+No\.?)?|Transaction\s*ID|TID|TRX\s*ID|Receipt\s*No\.?)\s*[:#]?\s*\n?\s*([A-Z]{0,4}\d{8,24})/i)))out.ref=(/^\d/.test(m[1])?'Transfer ':'')+m[1];
+  // amount
+  const at=text.replace(/[\d,.]+\s*AUD/gi,' ');
+  const nums=[];const addN=s=>{const v=parseFloat(String(s).replace(/,/g,''));if(v>0&&v<1e9)nums.push(v);};
+  for(const r of [/(?:PKR|Rs\.?|Rupees)\s*([\d,]+(?:\.\d{1,2})?)/gi,/([\d,]{3,}(?:\.\d{1,4})?)\s*(?:PKR|Rs\b)/gi,/Amount(?:\s+to\s+Receive)?[^\d]{0,20}([\d,]{3,}(?:\.\d{1,2})?)/gi])
+    for(const x of at.matchAll(r))addN(x[1]);
+  if(nums.length)out.amount=Math.max(...nums);
+  // date
+  if((m=text.match(/\b(20\d\d)[-\/.](\d{1,2})[-\/.](\d{1,2})/))){out.date=`${m[1]}-${m[2].padStart(2,'0')}-${m[3].slice(0,2).padStart(2,'0')}`;}
+  else if((m=text.match(/\b([0-3O]?[0-9O])(?:st|nd|rd|th)?\s*[-\/ ]?\s*(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*\.?,?\s*[-\/ ]?\s*(20\d\d)/i))){
+    const d=m[1].replace(/O/g,'0');out.date=`${m[3]}-${String(MONS[m[2].toLowerCase().slice(0,3)]).padStart(2,'0')}-${d.padStart(2,'0')}`;}
+  else if((m=text.match(/\b(\d{1,2})[\/.-](\d{1,2})[\/.-](20\d\d)\b/))){out.date=`${m[3]}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`;}
+  if(out.date&&!/^20\d\d-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/.test(out.date))delete out.date;
+  // name
+  const lab=[/^beneficiary(\s+name)?\s*$/i,/^transfer\s+to\s*$/i,/^account\s+(title|name)\s*$/i,/^receiver(\s+payout\s+method)?\s*$/i,/^paid\s+to\s*$/i,/^remitter\s+beneficiary\s*$/i,/^beneficiary\s+details?\s*$/i,/^to\s*$/i];
+  for(let i=0;i<lines.length-1&&!out.name;i++){if(lab.some(r=>r.test(lines[i]))){
+    let n=lines[i+1].replace(/^\|/,'I').replace(/\s+(Bank\s+Deposit|Cash\s+Pick\s*up|Mobile\s+Wallet|Wallet).*$/i,'').replace(/[^A-Za-z .&']/g,' ').replace(/\s+/g,' ').trim();
+    if(n.length>=3&&!/^(account|iban|amount|pay via|raast|payment)/i.test(n))out.name=n;}}
+  if(out.ref||out.amount)out.method='Bank transfer';
+  return out;
+}
+const titleCase=s=>(s||'').toLowerCase().replace(/\b[a-z]/g,c=>c.toUpperCase());
+function normName(s){return (s||'').replace(/\(.*?\)/g,' ').toUpperCase().replace(/'S\b/g,'').replace(/[^A-Z ]/g,' ').split(/\s+/).filter(w=>w&&!['MUHAMMAD','MUHAMMED','MOHAMMAD','MOHAMMED','M','MR','CO','AND','SONS','THE','ACCOUNT','TO','PAID','SENT','FROM','S'].includes(w));}
+function matchSupplier(name,sups,pays){
+  const nt=normName(name);if(!nt.length)return null;
+  const score=(a)=>{const at=normName(a);if(!at.length)return 0;const c=nt.filter(w=>at.includes(w)).length;return c/Math.max(nt.length,at.length);};
+  const tally={};const add=(id,sc,w)=>{if(sc<0.5)return;const t=tally[id]||(tally[id]={s:0,w:0});if(sc>t.s){t.s=sc;t.w=w;}else if(sc===t.s)t.w+=w;};
+  for(const s of sups){add(s.id,score(s.name),50);
+    const m=(s.note||'').match(/Paid to:?\s*([^.]*)/i);if(m)for(const part of m[1].split(/,| and /i))add(s.id,score(part.replace(/\(.*?\)/g,'')),5);}
+  for(const p of pays){const m=(p.note||'').match(/Paid to\s+([A-Za-z .']+)/i);if(m)add(p.supplierId,score(m[1]),1);}
+  let best=null;for(const [id,t] of Object.entries(tally))if(!best||t.s>best.s||(t.s===best.s&&t.w>best.w))best={id,...t};
+  return best?sups.find(s=>s.id===best.id)||null:null;
+}
+
+// ---------- receipt reader (on-phone OCR) + duplicate check ----------
+let ocrWorker=null,ocrSeq=0,pendingHash=null,dupAck=false;
+const OCR_SRC='https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js';
+function loadScript(src){return new Promise((ok,no)=>{const x=document.createElement('script');x.src=src;x.onload=ok;x.onerror=no;document.head.appendChild(x);});}
+function ocrMsg(html,kind){const b=$('pOcr');b.hidden=!html;b.className='f full ocrbox'+(kind?' '+kind:'');b.innerHTML=html||'';}
+async function prepImage(file){const url=URL.createObjectURL(file);
+  try{const img=await new Promise((ok,no)=>{const i=new Image();i.onload=()=>ok(i);i.onerror=no;i.src=url;});
+    const sc=Math.min(1,1200/img.naturalWidth),c=document.createElement('canvas');c.width=Math.round(img.naturalWidth*sc);c.height=Math.round(img.naturalHeight*sc);
+    const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);try{x.filter='grayscale(1) contrast(1.15)';}catch(e){}x.drawImage(img,0,0,c.width,c.height);return c;}
+  finally{setTimeout(()=>URL.revokeObjectURL(url),2000);}}
+async function hashFile(f){try{const b=await f.arrayBuffer();const h=await crypto.subtle.digest('SHA-256',b);return [...new Uint8Array(h)].slice(0,16).map(v=>v.toString(16).padStart(2,'0')).join('');}catch(e){return null;}}
+const touched=el=>el.dataset.t==='1';
+function markAuto(el){el.classList.remove('autofill');void el.offsetWidth;el.classList.add('autofill');}
+function onReceipt(f){
+  if(!f)return;
+  hashFile(f).then(h=>{pendingHash=h;runDup();});
+  if(editPay||!window.FIREBASE_CONFIG||!/^image\//.test(f.type||''))return;
+  readReceipt(f);
+}
+async function readReceipt(f){
+  const seq=++ocrSeq;
+  ocrMsg('<span class="spin"></span>Reading receipt… <small>The first time takes a little longer.</small>','busy');
+  try{
+    if(!window.Tesseract)await loadScript(OCR_SRC);
+    if(!ocrWorker)ocrWorker=await Tesseract.createWorker('eng');
+    const {data}=await ocrWorker.recognize(await prepImage(f));
+    if(seq!==ocrSeq||!$('payDlg').open)return;
+    const r=parseReceipt(data&&data.text);
+    const got=[];
+    if(r.amount&&!touched($('pAmt'))){$('pAmt').value=r.amount;markAuto($('pAmt'));got.push(fmt(r.amount));}
+    if(r.date&&!touched($('pDate'))){$('pDate').value=r.date;markAuto($('pDate'));got.push(dfmt(r.date));}
+    if(r.ref&&!touched($('pRef'))){$('pRef').value=r.ref;markAuto($('pRef'));got.push(r.ref);}
+    if(r.method&&!touched($('pMethod'))){$('pMethod').value=r.method;markAuto($('pMethod'));}
+    let supTxt='';
+    if(r.name){const s=matchSupplier(r.name,real.suppliers,real.pays);
+      if(s&&!touched($('pSup'))){$('pSup').value=s.name;markAuto($('pSup'));if(s.cat)$('pCat').value=s.cat;payHint();supTxt=`<b>${esc(titleCase(r.name))}</b> → ${esc(s.name)}`;}
+      else if(!s)supTxt=`Paid to <b>${esc(titleCase(r.name))}</b>. Pick the category yourself.`;
+      if(!touched($('pNote'))&&!$('pNote').value.trim()){$('pNote').value='Paid to '+titleCase(r.name);markAuto($('pNote'));}}
+    if(!got.length&&!supTxt){ocrMsg("Couldn't read the details on this receipt. Fill the form yourself.",'err');return;}
+    ocrMsg(`<b>Filled from the receipt.</b> Please check before saving.<br><small>${[...got.map(esc),supTxt].filter(Boolean).join(' · ')}</small>`,'ok');
+    runDup();
+  }catch(e){if(seq===ocrSeq)ocrMsg("Couldn't read this receipt (check your internet the first time). Fill the form yourself.",'err');}
+}
+function refKey(r){const m=String(r||'').match(/\d{8,}/g);return m?m.sort((a,b)=>b.length-a.length)[0]:'';}
+function findDups({ref,date,amount,rhash,exclude}){
+  const out=[];const rk=refKey(ref);
+  for(const p of real.pays){if(p.id===exclude)continue;const why=[];
+    if(rk&&refKey(p.ref)===rk)why.push('same reference');
+    if(rhash&&p.rhash===rhash)why.push('same receipt photo');
+    if(date&&amount>0&&p.date===date&&Math.abs(num(p.amount)-amount)<1&&!(rk&&refKey(p.ref)&&refKey(p.ref)!==rk))why.push('same date and amount');
+    if(why.length)out.push({p,why});}
+  return out;}
+const supName=id=>{const s=real.suppliers.find(x=>x.id===id);return s?s.name:'Unknown';};
+function runDup(){
+  if(!$('payDlg').open)return;
+  dupAck=false;const sb=$('payForm').querySelector('button[type=submit]');if(sb&&sb.textContent==='Save anyway')sb.textContent='Save payment';
+  const d=findDups({ref:$('pRef').value,date:$('pDate').value,amount:num($('pAmt').value),rhash:pendingHash,exclude:editPay&&editPay.id});
+  const b=$('pDup');b.hidden=!d.length;
+  b.innerHTML=d.length?`<b>This may already be saved</b>${d.slice(0,3).map(({p,why})=>`<div>${esc(supName(p.supplierId))} · ${dfmt(p.date)} · ${fmt(num(p.amount))}${p.ref?' · '+esc(p.ref):''} <em>(${why.join(', ')})</em></div>`).join('')}`:'';
+  return d;}
+['pRef','pDate','pAmt','pSup','pMethod','pNote'].forEach(id=>{const el=$(id);el.addEventListener('input',()=>{el.dataset.t='1';});el.addEventListener('change',()=>{el.dataset.t='1';});});
+['pRef','pDate','pAmt'].forEach(id=>$(id).addEventListener('input',runDup));
+$('pFile').addEventListener('change',()=>{const f=$('pFile').files&&$('pFile').files[0];if(f)onReceipt(f);});
+function allDups(){
+  const groups=[];const by=(key,label)=>{const m={};for(const p of real.pays){const k=key(p);if(k)(m[k]=m[k]||[]).push(p);}
+    for(const arr of Object.values(m))if(arr.length>1&&!(label.startsWith('Same date')&&new Set(arr.map(p=>refKey(p.ref)||p.id)).size===arr.length&&arr.every(p=>refKey(p.ref))))groups.push({label,arr});};
+  by(p=>refKey(p.ref),'Same reference');by(p=>p.rhash,'Same receipt photo');by(p=>p.date&&num(p.amount)>0?p.date+'|'+Math.round(num(p.amount)):'','Same date and amount');
+  return groups;}
+function showAllDups(){
+  const g=allDups(),box=$('dupAll');
+  box.innerHTML=g.length?g.map(({label,arr})=>`<div class="dupgrp"><b>${label}</b>${arr.map(p=>`<div>${esc(supName(p.supplierId))} · ${dfmt(p.date)} · ${fmt(num(p.amount))}${p.ref?' · '+esc(p.ref):''}</div>`).join('')}</div>`).join('')
+    :`<div class="hint">No duplicates found in ${real.pays.length} payments.</div>`;}
 $('payForm').addEventListener('submit',async e=>{
   e.preventDefault();if(!needDb('payErr'))return;
   const amount=num($('pAmt').value);if(!(amount>0))return showErr('payErr','Enter the amount paid.');
   if(!$('pSup').value.trim())return showErr('payErr','Enter a supplier.');
-  const btn=e.submitter;btn.disabled=true;btn.textContent='Saving…';
+  const btn=e.submitter;
+  if(!dupAck){const d=runDup();if(d&&d.length){dupAck=true;btn.textContent='Save anyway';showErr('payErr','This looks like a payment you already saved (see above). Tap Save anyway to keep both.');return;}}btn.disabled=true;btn.textContent='Saving…';
   try{
     let rc=null;try{rc=await uploadFile($('pFile'),'p');}catch(err){showErr('payErr',uploadErr(err));return;}
     const pq=editPay?0:num($('pQty').value);
@@ -1286,11 +1428,11 @@ $('payForm').addEventListener('submit',async e=>{
       await db.doc('bills/'+newId('b_')).set({date:$('pDate').value,supplierId,cat:$('pCat').value,stage:lastStage,item:'',qty:pq,unit:$('pUnit').value,rate:Math.round(pr*100)/100,total:Math.round(pq*pr*100)/100,ref:$('pRef').value.trim(),note:'Bought with payment',receipt:null,receiptType:'',createdAt:Date.now()-1});}
     const id=editPay?editPay.id:newId('p_');
     await db.doc('payments/'+id).set({date:$('pDate').value,supplierId,amount,method:$('pMethod').value,ref:$('pRef').value.trim(),note:$('pNote').value.trim(),
-      receipt:rc?rc.id:(editPay&&editPay.receipt)||null,receiptType:rc?rc.type:(editPay&&editPay.receiptType)||'',
+      receipt:rc?rc.id:(editPay&&editPay.receipt)||null,receiptType:rc?rc.type:(editPay&&editPay.receiptType)||'',rhash:rc?(pendingHash||null):((editPay&&editPay.rhash)||null),
       createdAt:editPay?(editPay.createdAt||Date.now()):Date.now()});
     $('payDlg').close();toast(editPay?'Payment updated':pq>0?'Payment and material saved':'Payment saved');
   }catch(err){showErr('payErr',writeErr(err));}
-  finally{btn.disabled=false;btn.textContent='Save payment';}
+  finally{btn.disabled=false;btn.textContent='Save payment';dupAck=false;}
 });
 
 // Supplier
@@ -1521,6 +1663,7 @@ $('fidBtn').addEventListener('click',async()=>{const b=$('fidBtn');b.disabled=tr
   catch(e){$('fidMsg').textContent='Face ID was cancelled or is not set up on this phone.';}
   finally{b.disabled=false;setTimeout(fidPaint,50);}});
 $('bkBtn').addEventListener('click',fullBackup);
+$('dupBtn').addEventListener('click',showAllDups);
 $('addBillBtn').addEventListener('click',()=>openBill());
 $('addPayBtn').addEventListener('click',()=>openPay());
 $('addSupBtn').addEventListener('click',()=>openSup());
