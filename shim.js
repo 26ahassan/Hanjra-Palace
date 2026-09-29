@@ -36,13 +36,16 @@
     if(dataUrl.length>MAX)throw {code:'too_large'};
     return {data:dataUrl,type};
   }
+  const rsize=st=>(st.data?st.data.length:0)+(st.type?st.type.length:0)+80;
+  const meta=()=>fs.doc('meta/usage');
+  const noteSize=(id,n)=>meta().set({sizes:{[id]:n},at:Date.now()},{merge:true}).catch(()=>{});
   const rid=()=>{const a=new Uint8Array(16);crypto.getRandomValues(a);return [...a].map(b=>b.toString(16).padStart(2,'0')).join('');};
   const cache={};
   api.assets={
     upload:async(file,opt)=>{const type=(opt&&opt.type)||file.type||'image/jpeg';
       if(!/^image\//.test(type)&&type!=='application/pdf')throw {code:'unsupported_type'};
       const st=await toStored(await readURL(file),type);const id=rid();
-      await fs.doc('receipts/'+id).set({type:st.type,data:st.data,createdAt:Date.now()});cache[id]=st;
+      await fs.doc('receipts/'+id).set({type:st.type,data:st.data,createdAt:Date.now()});cache[id]=st;noteSize(id,rsize(st));
       return {id,url:st.data,contentType:st.type,sizeBytes:st.data.length};}
   };
   api.downloads={save:async({filename,data})=>{
@@ -60,18 +63,22 @@
       for(const [c,arr] of [['suppliers',obj.suppliers],['bills',obj.bills],['payments',obj.payments]])
         for(const x of arr||[]){const {id,...rest}=x;if(id)small.push([c+'/'+id,rest]);}
       for(let i=0;i<small.length;i+=400){const b=fs.batch();small.slice(i,i+400).forEach(([p,d])=>b.set(fs.doc(p),d));await b.commit();progress&&progress(`Saved ${Math.min(i+400,small.length)} of ${small.length} records`);}
-      const R=Object.entries(obj.receipts||{});let n=0,bad=0;
+      const R=Object.entries(obj.receipts||{});let n=0,bad=0;const sz={};
       for(const [id,r] of R){n++;progress&&progress(`Saving receipt photos ${n} of ${R.length}`);
-        try{const st=await toStored(r.data,r.type||'image/jpeg');await fs.doc('receipts/'+id).set({type:st.type,data:st.data,createdAt:Date.now()});}catch(e){bad++;}}
+        try{const st=await toStored(r.data,r.type||'image/jpeg');await fs.doc('receipts/'+id).set({type:st.type,data:st.data,createdAt:Date.now()});sz[id]=rsize(st);}catch(e){bad++;}}
+      if(Object.keys(sz).length)await meta().set({sizes:sz,at:Date.now()},{merge:true});
       return {records:small.length,receipts:R.length-bad,failed:bad};
     },
+    async receiptUsage(){const d=await meta().get();if(!d.exists)return null;const m=d.data().sizes||{};const v=Object.values(m);return {bytes:v.reduce((a,b)=>a+b,0),count:v.length,at:d.data().at||0};},
+    async recalcUsage(){const sz={};(await fs.collection('receipts').get()).docs.forEach(d=>{sz[d.id]=rsize(d.data());});await meta().set({sizes:sz,at:Date.now()});const v=Object.values(sz);return {bytes:v.reduce((a,b)=>a+b,0),count:v.length,at:Date.now()};},
     async exportBackup(progress){
       const get=async c=>(await fs.collection(c).get()).docs.map(d=>({id:d.id,...d.data()}));
       const out={app:'house-build-ledger',version:1,exportedAt:new Date().toISOString()};
       const s=await fs.doc('settings/main').get();out.settings=s.exists?s.data():null;
       out.suppliers=await get('suppliers');out.bills=await get('bills');out.payments=await get('payments');
       progress&&progress('Reading receipt photos…');out.receipts={};
-      (await fs.collection('receipts').get()).docs.forEach(d=>{const r=d.data();out.receipts[d.id]={type:r.type,data:r.data};});
+      const sz={};(await fs.collection('receipts').get()).docs.forEach(d=>{const r=d.data();out.receipts[d.id]={type:r.type,data:r.data};sz[d.id]=rsize(r);});
+      await meta().set({sizes:sz,at:Date.now()}).catch(()=>{});
       return out;
     }
   };

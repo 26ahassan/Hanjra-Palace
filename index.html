@@ -500,6 +500,9 @@ b.kn{font-weight:600}
 .fbin{padding:20px 22px 22px;display:flex;flex-direction:column;gap:12px}
 .fbt{font-size:30px;margin-bottom:4px}
 .fbgate .err:empty{display:none}
+.stometer{height:12px;border-radius:999px;background:var(--surface-2);overflow:hidden;box-shadow:inset 0 0 0 1px var(--line)}
+.stometer i{display:block;height:100%;border-radius:999px;background:var(--paid);transition:width .4s}
+.stometer i.warn{background:var(--gold)}.stometer i.bad{background:var(--due)}
 </style>
 
 <div class="wrap">
@@ -728,6 +731,12 @@ b.kn{font-weight:600}
       <div><span class="eyebrow">Backup</span> <span class="hint">Download everything, including receipt photos, as one file. Import puts a backup file into this app.</span></div>
       <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button class="btn" type="button" id="bkBtn">Download full backup</button><label class="btn" for="bkFile" style="cursor:pointer">Import backup file</label><input id="bkFile" type="file" accept=".json,application/json" hidden></div>
       <div class="hint" id="bkMsg"></div>
+    </div>
+    <div class="sep" style="display:flex;flex-direction:column;gap:8px">
+      <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><span class="eyebrow">Storage used</span><span class="num" id="stoPct" style="font-weight:700"></span></div>
+      <div class="stometer"><i id="stoBar"></i></div>
+      <div class="hint num" id="stoMsg">Checking…</div>
+      <button class="btn ghost small" type="button" id="stoBtn" style="align-self:flex-start" hidden>Recalculate</button>
     </div>
     <div class="sep" id="fidWrap" style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap" hidden>
       <div style="display:flex;flex-direction:column;gap:2px"><span class="eyebrow">Face ID lock</span><span class="hint" id="fidMsg">Ask for Face ID every time the app opens.</span></div>
@@ -1435,7 +1444,7 @@ async function fullBackup(){
   const btn=$('bkBtn'),msg=$('bkMsg');btn.disabled=true;
   try{const out=await fb.exportBackup(t=>msg.textContent=t);
     await downloads.save({filename:`hanjra-palace-backup-${today()}.json`,data:new Blob([JSON.stringify(out)],{type:'application/json'})});
-    msg.textContent=`Backup ready: ${out.suppliers.length} suppliers, ${out.payments.length} payments, ${Object.keys(out.receipts).length} receipts.`;}
+    msg.textContent=`Backup ready: ${out.suppliers.length} suppliers, ${out.payments.length} payments, ${Object.keys(out.receipts).length} receipts.`;stoLoad();}
   catch(e){msg.textContent='Backup did not finish. Check your internet and try again.';}
   finally{btn.disabled=false;}
 }
@@ -1443,7 +1452,7 @@ $('bkFile').addEventListener('change',async()=>{
   const f=$('bkFile').files[0];if(!f)return;const msg=$('bkMsg');
   try{msg.textContent='Reading file…';const obj=JSON.parse(await f.text());
     const r=await fb.importBackup(obj,t=>msg.textContent=t);
-    msg.textContent=`Import done: ${r.records} records and ${r.receipts} receipt photos saved.`+(r.failed?` ${r.failed} photos were too large and were skipped.`:'');toast('Backup imported');}
+    msg.textContent=`Import done: ${r.records} records and ${r.receipts} receipt photos saved.`+(r.failed?` ${r.failed} photos were too large and were skipped.`:'');toast('Backup imported');stoLoad();}
   catch(e){msg.textContent=(e&&e.message)||'Import failed.';}
   finally{$('bkFile').value='';}
 });
@@ -1452,6 +1461,20 @@ function fidPaint(){const on=fbLock.enabled();$('fidBtn').textContent=on?'Turn o
   $('fidMsg').textContent=on?'On. The app asks for Face ID when it opens.':'Ask for Face ID every time the app opens.';}
 $('editBudgetBtn').addEventListener('click',async()=>{const u=fb.user();$('fbWho').textContent=u?u.email:'';
   $('fidWrap').hidden=!(await fbLock.supported());fidPaint();});
+const FREE=1024*1024*1024;
+const mb=n=>n>=1024*1024*1024?(n/1073741824).toFixed(2)+' GB':(n/1048576).toFixed(n<10485760?1:0)+' MB';
+function recBytes(){const all=[...real.suppliers,...real.bills,...real.pays];return all.reduce((a,r)=>a+JSON.stringify(r).length+120,0)+JSON.stringify(real.settings||{}).length;}
+function stoPaint(u){const rec=recBytes(),rb=u?u.bytes:0,tot=rec+rb,pct=tot/FREE*100;
+  $('stoBar').style.width=Math.max(pct,0.6).toFixed(2)+'%';
+  $('stoBar').className=pct>=90?'bad':pct>=70?'warn':'';
+  $('stoPct').textContent=(pct<1?pct.toFixed(1):Math.round(pct))+'%';
+  $('stoMsg').textContent=u?`About ${mb(tot)} of 1 GB free space. Receipt photos: ${u.count} (${mb(rb)}). Entries: ${real.bills.length+real.pays.length} (${mb(rec)}).`+(pct>=70?' Space is getting full. Ask Claude to shrink the photos.':'')
+    :'Receipt photos have not been measured yet. Tap Recalculate once.';
+  $('stoBtn').hidden=!!u&&pct<70;}
+async function stoLoad(){try{stoPaint(await fb.receiptUsage());}catch(e){$('stoMsg').textContent='Could not read storage. Check your internet.';}}
+$('stoBtn').addEventListener('click',async()=>{const b=$('stoBtn');b.disabled=true;$('stoMsg').textContent='Measuring receipt photos…';
+  try{stoPaint(await fb.recalcUsage());}catch(e){$('stoMsg').textContent='Could not measure. Check your internet.';}finally{b.disabled=false;}});
+$('editBudgetBtn').addEventListener('click',stoLoad);
 $('fidBtn').addEventListener('click',async()=>{const b=$('fidBtn');b.disabled=true;
   try{if(fbLock.enabled()){await fbLock.disable();toast('Face ID lock turned off');}
       else{const u=fb.user();await fbLock.enable(u&&u.email);toast('Face ID lock is on');}}
