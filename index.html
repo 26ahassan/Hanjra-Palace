@@ -162,11 +162,21 @@ header.hero .acts .btn{background:rgba(255,255,255,.88);border-color:transparent
 td.qty{white-space:nowrap;font-weight:600}
 @media (max-width:720px){.mrow{grid-template-columns:1fr auto}.mrow .t{grid-column:1/-1;text-align:left}.mrow .t small{display:inline;margin-left:6px}}
 .pastezone{margin-top:6px;border:1.5px dashed var(--line-strong);border-radius:8px;padding:12px;min-height:46px;color:var(--ink-3);font-size:13.5px;text-align:center;background:var(--surface-2);cursor:text;outline:none;caret-color:transparent;overflow:hidden;max-height:60px}
-.pastezone:empty::before{content:"Or tap here, then choose Paste (Ctrl+V on computer)"}
+.pastezone:empty::before{content:"Or tap here, then choose Paste"}
+@media (hover:hover) and (pointer:fine){.pastezone:empty::before{content:"Or press Ctrl+V, or drag the file here"}}
+.pastebtn{display:none;margin-top:6px}
+@media (hover:hover) and (pointer:fine){.pastebtn{display:inline-flex}}
+.dropping .pastezone{border-color:var(--accent);background:var(--accent-soft)}
 .pastezone:focus{border-color:var(--accent);background:var(--accent-soft);color:var(--ink-2)}
-.pasteprev{display:flex;align-items:center;gap:10px;margin-top:6px;padding:6px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--paid);font-weight:600}
-.pasteprev img{width:44px;height:44px;object-fit:cover;border-radius:6px}
-.pasteprev span{flex:1}
+.pasteprev{display:flex;align-items:center;gap:12px;margin-top:8px;padding:10px 8px;border:1px solid var(--line);border-radius:8px;font-size:13px;color:var(--paid);font-weight:600}
+.pthumb{position:relative;width:56px;height:56px;flex:none;border-radius:8px;background:var(--surface-2);border:1px solid var(--line);display:grid;place-items:center}
+.pthumb img{width:100%;height:100%;object-fit:cover;border-radius:7px}
+.pthumb .pdfb{font-size:12px;color:var(--due);letter-spacing:.06em}
+.px{position:absolute;top:-8px;right:-8px;width:24px;height:24px;border-radius:50%;border:2px solid var(--surface);background:var(--ink);color:var(--surface);font:700 16px/1 system-ui,sans-serif;display:grid;place-items:center;cursor:pointer;padding:0}
+.px:hover{background:var(--due)}
+.pinfo{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+.pinfo b{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pinfo small{font-weight:400;color:var(--ink-3);font-size:12px}
 .empty{color:var(--ink-3);padding:14px 16px 18px;font-size:14px}
 .chartbox{padding:4px 12px 12px}
 .chartbox svg{display:block;width:100%;height:auto}
@@ -392,6 +402,8 @@ dialog::backdrop{background:rgba(12,16,14,.5);-webkit-backdrop-filter:blur(3px);
 .hi .eyebrow{font-size:10px;letter-spacing:.12em}
 .hi0{background:linear-gradient(150deg,var(--accent),color-mix(in srgb,var(--accent) 70%,#000));color:#fff}
 .hi0 .eyebrow,.hi0 small{color:rgba(255,255,255,.78)}
+.hi0{cursor:pointer}.hi0 .eyebrow::after{content:"  \203A";font-size:15px;letter-spacing:0}
+.pastebtn{width:auto}
 .hi0::after{content:"";position:absolute;right:-26px;top:-26px;width:90px;height:90px;border-radius:50%;border:14px solid rgba(255,255,255,.08)}
 .hi1 b{color:var(--gold)}
 .panel>.ph h3{font-family:var(--serif);font-weight:400;font-size:20px;letter-spacing:.02em}
@@ -527,6 +539,13 @@ b.kn{font-weight:600}
   #stmtDlg .sw-btn{flex:1;border:0;border-radius:14px;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
   #stmtDlg .sw-btn svg{width:22px;height:22px}
   #stmtDlg .sw-btn.wait{opacity:.7}
+  #tab-ledger tbody{overflow-x:clip}
+  #tab-ledger tbody tr{position:relative;transition:transform .22s cubic-bezier(.2,.8,.2,1);touch-action:pan-y}
+  #tab-ledger tbody tr.swiping{transition:none}
+  #tab-ledger .sw-act{display:flex!important;position:absolute;top:0;bottom:0;right:-96px;width:86px;padding:0!important}
+  #tab-ledger .sw-btn{flex:1;border:0;border-radius:16px;background:var(--accent);color:#fff;font:inherit;font-weight:700;font-size:13px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+  #tab-ledger .sw-btn svg{width:22px;height:22px}
+  #tab-ledger .sw-btn.wait{opacity:.7}
 }
 /* ===== settings page + themes ===== */
 .setttl{font-family:var(--serif);font-weight:400;font-size:28px;margin:4px 2px 12px}
@@ -776,7 +795,7 @@ b.kn{font-weight:600}
     </div>
     <div class="fgrid">
       <div class="f full"><label for="bNote">Note <em>(optional)</em></label><textarea id="bNote" placeholder="Delivery details, quality, who received it"></textarea></div>
-      <div class="f full" data-assets><label for="bFile">Receipt photo or PDF <em>(optional)</em></label><input id="bFile" type="file" accept="image/*,application/pdf"><div class="pastezone" id="bPaste" contenteditable="true" role="textbox" aria-label="Paste receipt screenshot here" data-k="b"></div><div class="pasteprev" id="bPrev" hidden><img alt="Pasted receipt" id="bPrevImg"><span>Pasted receipt ready</span><button class="btn ghost small" type="button" data-unpaste="b">Remove</button></div><span class="hint" id="bFileNote"></span></div>
+      <div class="f full" data-assets><label for="bFile">Receipt photo or PDF <em>(optional)</em></label><input id="bFile" type="file" accept="image/*,application/pdf"><div class="pastezone" id="bPaste" contenteditable="true" role="textbox" aria-label="Paste receipt screenshot here" data-k="b"></div><button class="btn ghost small pastebtn" type="button" data-clip="b">Paste from clipboard</button><div class="pasteprev" id="bPrev" hidden><span class="pthumb"><img alt="Receipt" id="bPrevImg"><b class="pdfb" id="bPrevPdf" hidden>PDF</b><button class="px" type="button" data-unpaste="b" aria-label="Remove this file" title="Remove">&times;</button></span><span class="pinfo"><b id="bPrevName">Receipt ready</b><small>Wrong file? Tap &times; to remove it.</small></span></div><span class="hint" id="bFileNote"></span></div>
     </div>
     <div class="err" id="billErr" hidden></div>
     <div class="ftr"><button class="btn" type="button" data-close>Cancel</button><button class="btn primary" type="submit">Save bill</button></div>
@@ -788,7 +807,7 @@ b.kn{font-weight:600}
   <form class="dlg" id="payForm" method="dialog">
     <div class="hd"><div><span class="eyebrow">Money paid to a supplier</span><h2 id="payTitle">Add payment</h2></div><button class="btn ghost small" type="button" data-close>Close</button></div>
     <div class="fgrid">
-      <div class="f full" data-assets><label for="pFile">Receipt <em>(paste or choose it first, the form fills itself)</em></label><input id="pFile" type="file" accept="image/*,application/pdf"><div class="pastezone" id="pPaste" contenteditable="true" role="textbox" aria-label="Paste receipt screenshot here" data-k="p"></div><div class="pasteprev" id="pPrev" hidden><img alt="Pasted receipt" id="pPrevImg"><span>Pasted receipt ready</span><button class="btn ghost small" type="button" data-unpaste="p">Remove</button></div><span class="hint" id="pFileNote"></span></div>
+      <div class="f full" data-assets><label for="pFile">Receipt <em>(paste or choose it first, the form fills itself)</em></label><input id="pFile" type="file" accept="image/*,application/pdf"><div class="pastezone" id="pPaste" contenteditable="true" role="textbox" aria-label="Paste receipt screenshot here" data-k="p"></div><button class="btn ghost small pastebtn" type="button" data-clip="p">Paste from clipboard</button><div class="pasteprev" id="pPrev" hidden><span class="pthumb"><img alt="Receipt" id="pPrevImg"><b class="pdfb" id="pPrevPdf" hidden>PDF</b><button class="px" type="button" data-unpaste="p" aria-label="Remove this file" title="Remove">&times;</button></span><span class="pinfo"><b id="pPrevName">Receipt ready</b><small>Wrong file? Tap &times; to remove it.</small></span></div><span class="hint" id="pFileNote"></span></div>
       <div class="f full ocrbox" id="pOcr" hidden></div>
       <div class="f"><label for="pDate">Date</label><input id="pDate" type="date" required></div>
       <div class="f"><label for="pSup">Supplier</label><input id="pSup" list="supNames" required autocomplete="off" placeholder="Pick or type a new name"><span class="hint" id="pSupBal"></span></div>
@@ -1153,9 +1172,9 @@ function fillFilters(d){
   keep($('fMonth'),'<option value="">All months</option>'+months.map(k=>`<option value="${k}">${mfmt(k)}</option>`).join(''));
 }
 function payRows(d){
-  const sm=Object.fromEntries(d.suppliers.map(x=>[x.id,x]));const bm={};
-  for(const b of d.bills){if(!num(b.qty))continue;const k=b.supplierId+'|'+b.date+'|'+Math.round(num(b.total));(bm[k]=bm[k]||[]).push(b);}
-  return d.pays.map(p=>{const x=sm[p.supplierId];const k=p.supplierId+'|'+p.date+'|'+Math.round(num(p.amount));const b=bm[k]&&bm[k].shift();
+  const sm=Object.fromEntries(d.suppliers.map(x=>[x.id,x]));const bm={},bp={};
+  for(const b of d.bills){if(!num(b.qty))continue;if(b.payId){bp[b.payId]=b;continue;}const k=b.supplierId+'|'+b.date+'|'+Math.round(num(b.total));(bm[k]=bm[k]||[]).push(b);}
+  return d.pays.map(p=>{const x=sm[p.supplierId];const k=p.supplierId+'|'+p.date+'|'+Math.round(num(p.amount));const b=bp[p.id]||(bm[k]&&bm[k].shift());
     const bits=[];if(p.ref)bits.push('Ref '+p.ref);if(p.note)bits.push(p.note);
     return {t:'pay',id:p.id,date:p.date,sup:p.supplierId,supName:x?x.name:'Unknown',cat:(b&&b.cat)||(x&&x.cat)||'',
       detail:(b&&b.item?b.item+' · ':'')+(p.method||'Payment'),sub:bits.join(' · '),qty:b?num(b.qty):0,unit:b?b.unit||'':'',rate:b?num(b.rate):0,pay:num(p.amount),ts:p.createdAt||0,receipt:p.receipt||(b&&b.receipt)||null,receiptType:p.receipt?(p.receiptType||''):((b&&b.receiptType)||'')};});
@@ -1167,15 +1186,16 @@ function filtered(d){
 }
 const rcptCap=r=>[r.supName,fmt(r.pay||r.bill),dfmt(r.date),r.sub].filter(Boolean).join(' · ');
 const rcptBtn=r=>r.receipt?`<button class="rcpt" type="button" data-rcpt="${esc(r.receipt)}" data-rtype="${esc(r.receiptType)}" data-cap="${esc(rcptCap(r))}"><svg width="13" height="13" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><path d="M4 1.5h8v13l-2-1.3-2 1.3-2-1.3-2 1.3z"/><path d="M6 5h4M6 8h4"/></svg>Receipt</button>`:'';
+const SWCELL=id=>`<td class="sw-act"><button type="button" class="sw-btn" data-swshare="${esc(id)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12M7 8l5-5 5 5"/><path d="M5 12v7a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7"/></svg><span>Share</span></button></td>`;
 function renderLedger(d){
   const rows=filtered(d),canEdit=!d.demo&&!!db;
-  $('ledgerBody').innerHTML=rows.map(r=>`<tr>
+  $('ledgerBody').innerHTML=rows.map(r=>`<tr${r.receipt?` data-rc="${esc(r.receipt)}"`:''}>
     <td class="num" style="white-space:nowrap">${dfmt(r.date)}</td>
     <td><b class="kn">${esc(r.supName)}</b></td>
     <td>${esc(r.detail)}${r.sub?`<div class="sub">${esc(r.sub)}</div>`:''}${rcptBtn(r)}</td>
     <td class="r num qty">${r.qty?`${esc(unitShow(r.qty,r.unit))}<div class="sub" style="font-weight:400">@ ${fmt(r.rate)}/${esc(unitWord(r.unit))}</div>`:''}</td>
     <td class="r num amt-pay">${fmt(r.pay)}</td>
-    <td class="acts">${canEdit?`<button class="btn ghost small" type="button" data-edit="pay:${esc(r.id)}">Edit</button><button class="btn ghost small danger" type="button" data-del="pay:${esc(r.id)}">Delete</button>`:''}</td>
+    <td class="acts">${canEdit?`<button class="btn ghost small" type="button" data-edit="pay:${esc(r.id)}">Edit</button><button class="btn ghost small danger" type="button" data-del="pay:${esc(r.id)}">Delete</button>`:''}</td>${r.receipt?SWCELL(r.receipt):''}
   </tr>`).join('')||'<tr><td colspan="6" class="empty">No payments match these filters.</td></tr>';
   const tp=rows.reduce((a,r)=>a+r.pay,0);
   const qu={};for(const r of rows)if(r.qty)qu[r.unit]=(qu[r.unit]||0)+r.qty;
@@ -1202,6 +1222,10 @@ function setTab(t){
 document.querySelectorAll('.tab,.nb[data-tab]').forEach(b=>b.addEventListener('click',()=>setTab(b.dataset.tab)));
 $('chart').addEventListener('click',e=>{const b=e.target.closest('.cbar');if(!b)return;selMonth=b.dataset.k;renderChart(data());});
 $('seeAll').addEventListener('click',()=>setTab('ledger'));
+$('hilite').addEventListener('click',e=>{const t=e.target.closest('.hi0');if(!t)return;
+  const now=new Date(),mk=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');const fm=$('fMonth');
+  if(![...fm.options].some(o=>o.value===mk))fm.insertAdjacentHTML('afterbegin',`<option value="${mk}">${mfmt(mk)}</option>`);
+  $('fSup').value='';$('fCat').value='';$('fSearch').value='';fm.value=mk;renderLedger(data());setTab('ledger');});
 $('navAdd').addEventListener('click',()=>$('addDlg').showModal());
 $('navSettings').addEventListener('click',()=>$('editBudgetBtn').click());
 $('tabSettings').addEventListener('click',()=>$('editBudgetBtn').click());
@@ -1230,31 +1254,64 @@ async function ensureSupplier(name,cat){
   name=name.trim();const f=real.suppliers.find(x=>x.name.trim().toLowerCase()===name.toLowerCase());if(f)return f.id;
   const id=newId('s_');await db.doc('suppliers/'+id).set({name,phone:'',cat:cat||'other',note:'',createdAt:Date.now()});return id;}
 const pasted={b:null,p:null};
-function setPasted(k,f){
+const EXT={jpg:'image/jpeg',jpeg:'image/jpeg',png:'image/png',webp:'image/webp',gif:'image/gif',heic:'image/heic',bmp:'image/bmp',pdf:'application/pdf'};
+function okFile(f){if(!f)return null;const ext=((f.name||'').split('.').pop()||'').toLowerCase();
+  let t=f.type||'';if(!t&&EXT[ext])t=EXT[ext];
+  if(!/^image\//.test(t)&&t!=='application/pdf')return null;
+  return f.type===t?f:new File([f],f.name||('receipt.'+(ext||'png')),{type:t});}
+function setPasted(k,f,how){
   pasted[k]=f;const pv=$(k+'Prev'),img=$(k+'PrevImg');
-  if(f){try{img.src=URL.createObjectURL(f);}catch(e){}pv.hidden=false;$(k+'File').value='';toast('Receipt pasted');if(k==='p')setTimeout(()=>onReceipt(f),0);}
-  else{pv.hidden=true;img.removeAttribute('src');}
+  if(f){const pdf=f.type==='application/pdf';
+    img.hidden=pdf;$(k+'PrevPdf').hidden=!pdf;if(!pdf){try{img.src=URL.createObjectURL(f);}catch(e){}}else img.removeAttribute('src');
+    $(k+'PrevName').textContent=f.name&&how==='chosen'?f.name:'Receipt ready';
+    pv.hidden=false;$(k+'File').value='';toast(how==='chosen'?'Receipt added':'Receipt pasted');if(k==='p')setTimeout(()=>onReceipt(f),0);}
+  else{pv.hidden=true;img.removeAttribute('src');$(k+'File').value='';
+    if(k==='p'&&typeof ocrSeq!=='undefined'){ocrSeq++;ocrMsg('');pendingHash=null;$('pDup').hidden=true;}}
   $(k+'Paste').textContent='';
 }
-function imageFromClipboard(e){
-  const dt=e.clipboardData;if(!dt)return null;
-  for(const it of dt.items||[]){if(it.kind==='file'&&/^image\//.test(it.type)){const f=it.getAsFile();if(f)return f;}}
-  for(const f of dt.files||[]){if(/^image\//.test(f.type))return f;}
+function fileFromData(dt){
+  if(!dt)return null;
+  for(const it of dt.items||[]){if(it.kind==='file'){const f=okFile(it.getAsFile());if(f)return f;}}
+  for(const f of dt.files||[]){const g=okFile(f);if(g)return g;}
   return null;
 }
+async function imageFromHtml(dt){
+  const h=dt&&dt.getData&&dt.getData('text/html');const m=h&&h.match(/<img[^>]+src=["']([^"']+)["']/i);if(!m)return null;
+  try{const r=await fetch(m[1].replace(/&amp;/g,'&'));const b=await r.blob();return okFile(new File([b],'receipt.'+((b.type.split('/')[1]||'png').replace('jpeg','jpg')),{type:b.type}));}catch(e){return null;}
+}
+const openK=()=>$('payDlg').open?'p':$('billDlg').open?'b':null;
+document.addEventListener('paste',async e=>{
+  let k=openK();const t=e.target,typing=t&&t.closest&&t.closest('input,textarea,select')&&!t.closest('.pastezone');
+  let f=fileFromData(e.clipboardData);
+  if(!k){if(!f||typing||!db||document.querySelector('dialog[open]'))return;e.preventDefault();openPay();setPasted('p',f);return;}
+  const inZone=!!(t&&t.closest&&t.closest('#'+k+'Paste'));
+  if(f){e.preventDefault();setPasted(k,f);return;}
+  if(typing)return;
+  e.preventDefault();
+  f=await imageFromHtml(e.clipboardData);
+  if(f){setPasted(k,f);return;}
+  if(inZone||!typing)toast('No picture found. Copy the receipt picture first, then press Ctrl+V.');
+},true);
+async function pasteFromClipboard(k){
+  if(!navigator.clipboard||!navigator.clipboard.read){toast('Press Ctrl+V to paste.');return;}
+  try{const items=await navigator.clipboard.read();
+    for(const it of items){const ty=it.types.find(x=>/^image\//.test(x))||it.types.find(x=>x==='application/pdf');
+      if(ty){const b=await it.getType(ty);setPasted(k,new File([b],'receipt.'+(ty.split('/')[1]||'png').replace('jpeg','jpg'),{type:ty}));return;}}
+    toast('No picture found. Copy the receipt picture first.');}
+  catch(e){toast('Could not read the clipboard. Press Ctrl+V instead.');}
+}
 [['billDlg','b'],['payDlg','p']].forEach(([d,k])=>{
-  $(d).addEventListener('paste',e=>{
-    const f=imageFromClipboard(e);
-    const inZone=e.target===$(k+'Paste');
-    if(f){e.preventDefault();setPasted(k,f);}
-    else if(inZone){e.preventDefault();toast('No picture found. Copy the receipt screenshot first, then paste.');}
-  });
-  const z=$(k+'Paste');
+  const z=$(k+'Paste'),dlg=$(d);
   z.addEventListener('beforeinput',e=>{if(e.inputType!=='insertFromPaste')e.preventDefault();});
   z.addEventListener('input',()=>{z.textContent='';});
-  $(k+'File').addEventListener('change',()=>{if($(k+'File').files.length)setPasted(k,null);});
+  z.addEventListener('drop',e=>e.preventDefault());
+  $(k+'File').addEventListener('change',()=>{const f=$(k+'File').files&&$(k+'File').files[0];if(f)setPasted(k,f,'chosen');});
+  dlg.addEventListener('dragover',e=>{if(e.dataTransfer&&[...e.dataTransfer.types].includes('Files')){e.preventDefault();dlg.classList.add('dropping');}});
+  dlg.addEventListener('dragleave',e=>{if(e.target===dlg)dlg.classList.remove('dropping');});
+  dlg.addEventListener('drop',e=>{dlg.classList.remove('dropping');const f=fileFromData(e.dataTransfer);if(e.dataTransfer&&e.dataTransfer.files&&e.dataTransfer.files.length){e.preventDefault();if(f)setPasted(k,f,'chosen');else toast('Use a photo or a PDF.');}});
 });
-document.addEventListener('click',e=>{const b=e.target.closest('[data-unpaste]');if(b)setPasted(b.dataset.unpaste,null);});
+document.addEventListener('click',e=>{const b=e.target.closest('[data-unpaste]');if(b){e.preventDefault();setPasted(b.dataset.unpaste,null);}
+  const c=e.target.closest('[data-clip]');if(c)pasteFromClipboard(c.dataset.clip);});
 async function uploadFile(input,k){
   let f=input.files&&input.files[0];
   if(!f&&k&&pasted[k]){const pf=pasted[k];f=pf.name?pf:new File([pf],'receipt.png',{type:pf.type||'image/png'});}
@@ -1335,8 +1392,10 @@ function openPay(p,supId){
   $('pMethod').value=p&&p.method&&METHODS.includes(p.method)?p.method:'Cash';
   $('pRef').value=p?p.ref||'':'';$('pNote').value=p?p.note||'':'';
   $('pFile').value='';setPasted('p',null);$('pFileNote').textContent=p&&p.receipt?'A receipt is attached. Choose a file to replace it.':'';
-  document.querySelectorAll('[data-pm]').forEach(el=>el.hidden=!!p);
-  $('pCat').value=(s&&s.cat)||'cement';$('pQty').value='';$('pRate').value='';$('pUnit').value='bags';payCalc();
+  document.querySelectorAll('[data-pm]').forEach(el=>el.hidden=false);
+  const lb=linkedBill(p);
+  $('pCat').value=(lb&&lb.cat)||(s&&s.cat)||'cement';$('pQty').value=lb?num(lb.qty):'';$('pUnit').value=(lb&&lb.unit)||'bags';
+  $('pRate').value=lb&&num(lb.qty)?Math.round(num(p.amount)/num(lb.qty)*100)/100:'';payCalc();
   ['pRef','pDate','pAmt','pSup','pMethod','pNote'].forEach(id=>{delete $(id).dataset.t;$(id).classList.remove('autofill');});
   if(s&&!p)$('pSup').dataset.t='1';
   ocrSeq++;ocrMsg('');pendingHash=null;dupAck=false;$('pDup').hidden=true;
@@ -1449,7 +1508,6 @@ function runDup(){
   return d;}
 ['pRef','pDate','pAmt','pSup','pMethod','pNote'].forEach(id=>{const el=$(id);el.addEventListener('input',()=>{el.dataset.t='1';});el.addEventListener('change',()=>{el.dataset.t='1';});});
 ['pRef','pDate','pAmt'].forEach(id=>$(id).addEventListener('input',runDup));
-$('pFile').addEventListener('change',()=>{const f=$('pFile').files&&$('pFile').files[0];if(f)onReceipt(f);});
 function allDups(){
   const groups=[];const by=(key,label)=>{const m={};for(const p of real.pays){const k=key(p);if(k)(m[k]=m[k]||[]).push(p);}
     for(const arr of Object.values(m))if(arr.length>1&&!(label.startsWith('Same date')&&new Set(arr.map(p=>refKey(p.ref)||p.id)).size===arr.length&&arr.every(p=>refKey(p.ref))))groups.push({label,arr});};
@@ -1467,19 +1525,23 @@ $('payForm').addEventListener('submit',async e=>{
   if(!dupAck){const d=runDup();if(d&&d.length){dupAck=true;btn.textContent='Save anyway';showErr('payErr','This looks like a payment you already saved (see above). Tap Save anyway to keep both.');return;}}btn.disabled=true;btn.textContent='Saving…';
   try{
     let rc=null;try{rc=await uploadFile($('pFile'),'p');}catch(err){showErr('payErr',uploadErr(err));return;}
-    const pq=editPay?0:num($('pQty').value);
+    const pq=num($('pQty').value),lb=editPay?linkedBill(editPay):null;
     const supplierId=await ensureSupplier($('pSup').value,pq?$('pCat').value:'other');
-    if(pq>0){const pr=num($('pRate').value)||amount/pq;
-      await db.doc('bills/'+newId('b_')).set({date:$('pDate').value,supplierId,cat:$('pCat').value,stage:lastStage,item:'',qty:pq,unit:$('pUnit').value,rate:Math.round(pr*100)/100,total:Math.round(pq*pr*100)/100,ref:$('pRef').value.trim(),note:'Bought with payment',receipt:null,receiptType:'',createdAt:Date.now()-1});}
     const id=editPay?editPay.id:newId('p_');
+    if(pq>0){const pr=amount/pq;
+      await db.doc('bills/'+(lb?lb.id:newId('b_'))).set({date:$('pDate').value,supplierId,cat:$('pCat').value,stage:lb?(lb.stage||lastStage):lastStage,item:lb?(lb.item||''):'',qty:pq,unit:$('pUnit').value,rate:Math.round(pr*100)/100,total:amount,ref:$('pRef').value.trim(),note:'Bought with payment',receipt:null,receiptType:'',payId:id,createdAt:lb?(lb.createdAt||Date.now()-1):Date.now()-1});}
+    else if(lb)await db.doc('bills/'+lb.id).delete();
     await db.doc('payments/'+id).set({date:$('pDate').value,supplierId,amount,method:$('pMethod').value,ref:$('pRef').value.trim(),note:$('pNote').value.trim(),
       receipt:rc?rc.id:(editPay&&editPay.receipt)||null,receiptType:rc?rc.type:(editPay&&editPay.receiptType)||'',rhash:rc?(pendingHash||null):((editPay&&editPay.rhash)||null),
       createdAt:editPay?(editPay.createdAt||Date.now()):Date.now()});
-    $('payDlg').close();toast(editPay?'Payment updated':pq>0?'Payment and material saved':'Payment saved');
+    $('payDlg').close();toast(editPay?(pq>0?'Payment and material updated':'Payment updated'):pq>0?'Payment and material saved':'Payment saved');
   }catch(err){showErr('payErr',writeErr(err));}
   finally{btn.disabled=false;btn.textContent='Save payment';dupAck=false;}
 });
 
+function linkedBill(p){if(!p)return null;
+  return real.bills.find(b=>b.payId===p.id)||real.bills.find(b=>!b.payId&&num(b.qty)&&b.supplierId===p.supplierId&&b.date===p.date&&Math.round(num(b.total))===Math.round(num(p.amount)))
+    ||real.bills.find(b=>!b.payId&&num(b.qty)&&b.note==='Bought with payment'&&b.supplierId===p.supplierId&&Math.abs((b.createdAt||0)-(p.createdAt||0))<5000)||null;}
 // Supplier
 function conPaint(){document.querySelectorAll('[data-con]').forEach(e=>e.hidden=!$('sCon').checked);}
 let editSup=null;
@@ -1590,7 +1652,8 @@ $('ledgerBody').addEventListener('click',async e=>{
   const del=e.target.closest('[data-del]');if(!del||!db)return;
   if(!del.classList.contains('armed')){del.classList.add('armed');del.textContent='Confirm';setTimeout(()=>{if(del.isConnected){del.classList.remove('armed');del.textContent='Delete';}},3500);return;}
   const [t,id]=del.dataset.del.split(':');
-  try{await db.doc((t==='bill'?'bills/':'payments/')+id).delete();toast('Entry deleted');}catch(err){toast(writeErr(err));}
+  try{if(t!=='bill'){const lb=linkedBill(real.pays.find(p=>p.id===id));if(lb)await db.doc('bills/'+lb.id).delete();}
+    await db.doc((t==='bill'?'bills/':'payments/')+id).delete();toast('Entry deleted');}catch(err){toast(writeErr(err));}
 });
 
 // Export
@@ -1681,8 +1744,8 @@ async function shareFile(f){
       await downloads.save({filename:f.name,data:f});toast('Receipt saved');}
   catch(e){if(e&&e.name==='AbortError')return;toast('Could not share. Tap Share again.');}}
 // swipe left on a supplier's payment to share its receipt
-(function(){
-  const body=$('stmtBody');let row=null,x0=0,y0=0,dx=0,dir='',open=null;const W=96;
+[['stmtBody','stmtDlg'],['ledgerBody',null]].forEach(([bid,dlgId])=>{
+  const body=$(bid);let row=null,x0=0,y0=0,dx=0,dir='',open=null;const W=96;
   const setX=(tr,x)=>{tr.style.transform=x?`translateX(${x}px)`:'';};
   const close=()=>{if(open){setX(open,0);open=null;}};
   function prefetch(tr){const id=tr.dataset.rc;const btn=tr.querySelector('.sw-btn');if(!id||!btn||btn.dataset.ready)return;
@@ -1698,8 +1761,8 @@ async function shareFile(f){
   body.addEventListener('click',async e=>{const b=e.target.closest('.sw-btn');if(!b)return;e.stopPropagation();
     if(!b._rc){b.classList.add('wait');try{const rc=await fb.receipt(b.dataset.swshare);if(rc){b._rc=rc;b.dataset.ready='1';toast('Receipt ready. Tap Share again.');}}catch(_){toast('Could not load the receipt.');}b.classList.remove('wait');return;}
     await shareFile(dataUrlFile(b._rc.data,b._rc.type,'receipt'));close();});
-  $('stmtDlg').addEventListener('close',close);
-})();
+  if(dlgId)$(dlgId).addEventListener('close',close);else document.addEventListener('touchstart',e=>{if(open&&!open.contains(e.target))close();},{passive:true});
+});
 // ---------- full backup (Firebase) ----------
 async function fullBackup(){
   const btn=$('bkBtn'),msg=$('bkMsg');btn.disabled=true;
